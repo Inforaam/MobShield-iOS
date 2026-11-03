@@ -15,7 +15,9 @@
  */
 
 import Foundation
+#if canImport(MobShieldCore)
 import MobShieldCore
+#endif
 
 public struct HookNativeCheckResult: Sendable {
     public let code: Int

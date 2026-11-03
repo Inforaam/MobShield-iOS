@@ -15,7 +15,9 @@
  */
 
 import Foundation
+#if canImport(MobShieldCore)
 import MobShieldCore
+#endif
 
 /// iOS jailbreak detection for Dopamine, palera1n, unc0ver, checkra1n, and rootless variants.
 public struct JailbreakDetectionModule: DetectionModule {
@@ -24,7 +26,7 @@ public struct JailbreakDetectionModule: DetectionModule {
     private let detectionTuning: [String: SignalTuning]
     private let nativeTimeoutNs: UInt64
     private let nativeChecker: NativeChecker
-    private let configurePaths: () -> Void
+    private let configurePaths: @Sendable () -> Void
 
     public let name = "jailbreak"
     public let criticality = 90
@@ -34,7 +36,7 @@ public struct JailbreakDetectionModule: DetectionModule {
         detectionTuning: [String: SignalTuning]? = nil,
         nativeTimeoutMs: Int = 50,
         nativeChecker: NativeChecker = JailbreakNativeBridge.self,
-        configurePaths: (() -> Void)? = nil
+        configurePaths: (@Sendable () -> Void)? = nil
     ) {
         self.detectionTuning = detectionTuning ?? config.detectionTuning
         nativeTimeoutNs = UInt64(nativeTimeoutMs) * 1_000_000

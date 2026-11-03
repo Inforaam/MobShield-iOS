@@ -15,7 +15,9 @@
  */
 
 import Foundation
+#if canImport(MobShieldCore)
 import MobShieldCore
+#endif
 
 /// Merges built-in and config-supplied jailbreak filesystem paths.
 public struct ConfigurableSuspiciousPaths: Sendable {

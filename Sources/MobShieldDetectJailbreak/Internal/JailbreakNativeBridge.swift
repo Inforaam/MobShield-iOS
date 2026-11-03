@@ -111,7 +111,7 @@ private extension Array where Element == String {
                 free(pointer)
             }
         }
-        var cStrings: [UnsafePointer<CChar>?] = map { string in
+        let cStrings: [UnsafePointer<CChar>?] = map { string in
             guard let pointer = strdup(string) else {
                 return nil
             }

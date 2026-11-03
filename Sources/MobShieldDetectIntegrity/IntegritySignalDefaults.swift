@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+#if canImport(MobShieldCore)
 import MobShieldCore
+#endif
 
 public enum IntegritySignalDefaults {
     public static let secCode = "ios.integrity.sec_code"

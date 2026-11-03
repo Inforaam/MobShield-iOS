@@ -15,7 +15,9 @@
  */
 
 import Foundation
+#if canImport(MobShieldCore)
 import MobShieldCore
+#endif
 
 /// Detects execution environments that a genuine end-user install should never be in: the iOS
 /// Simulator (`EMULATOR`) and injected UI/test-automation frameworks (`AUTOMATION`).
