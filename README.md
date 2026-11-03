@@ -2,7 +2,7 @@
 
 Open-source mobile app hardening for iOS: modular RASP detectors, signal aggregation, and per-build native personalization.
 
-[![iOS CI](https://github.com/inforaamitsolutions/MobShield-iOS/actions/workflows/ios-ci.yml/badge.svg)](https://github.com/inforaamitsolutions/MobShield-iOS/actions/workflows/ios-ci.yml)
+[![iOS CI](https://github.com/Inforaam/MobShield-iOS/actions/workflows/ios-ci.yml/badge.svg)](https://github.com/Inforaam/MobShield-iOS/actions/workflows/ios-ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 ![Platform: iOS 15+](https://img.shields.io/badge/platform-iOS%2015%2B-lightgrey.svg)
 
@@ -32,7 +32,7 @@ MobShield runs a set of detection modules, aggregates their weighted signals int
 ```swift
 // Package.swift
 dependencies: [
-    .package(url: "https://github.com/inforaamitsolutions/MobShield-iOS", from: "1.1.0"),
+    .package(url: "https://github.com/Inforaam/MobShield-iOS", from: "1.1.0"),
 ]
 ```
 
