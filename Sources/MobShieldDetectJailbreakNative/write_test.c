@@ -16,8 +16,10 @@
 
 #include "mobshield_jb_checks.h"
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 int mobshield_jb_write_test(char* evidence, int evidence_len) {
     static const char* k_paths[] = {
@@ -27,10 +29,12 @@ int mobshield_jb_write_test(char* evidence, int evidence_len) {
     };
 
     for (int i = 0; k_paths[i] != NULL; ++i) {
-        FILE* file = fopen(k_paths[i], "w");
-        if (file != NULL) {
-            (void)fclose(file);
-            (void)remove(k_paths[i]);
+        // No O_TRUNC and O_NOFOLLOW: never clobber file contents or follow a planted
+        // symlink; 0600 keeps the short-lived probe file private to the app.
+        int fd = open(k_paths[i], O_WRONLY | O_CREAT | O_NOFOLLOW, 0600);
+        if (fd >= 0) {
+            (void)close(fd);
+            (void)unlink(k_paths[i]);
             if (evidence != NULL && evidence_len > 0) {
                 snprintf(evidence, (size_t)evidence_len, "path=%s", k_paths[i]);
             }
