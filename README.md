@@ -50,7 +50,7 @@ dependencies: [
 ### CocoaPods
 
 ```ruby
-pod 'MobShield/All', '1.1.1'
+pod 'MobShield/All', '1.1.2'
 ```
 
 Add `scripts/mobshield-personalize.sh` as a Run Script build phase (see `MobShieldSampleApp`).
@@ -129,7 +129,7 @@ swift test
 
 ## Release
 
-Tag `*.*.*` (e.g. `1.1.1`) on this repo for SwiftPM; optionally build XCFramework zips for GitHub Releases and run `pod trunk push` for CocoaPods.
+Tag `*.*.*` (e.g. `1.1.2`) on this repo for SwiftPM; optionally build XCFramework zips for GitHub Releases and run `pod trunk push` for CocoaPods.
 
 ```bash
 ./scripts/build-xcframeworks.sh

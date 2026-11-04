@@ -16,7 +16,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'MobShield'
-  s.version          = '1.1.1'
+  s.version          = '1.1.2'
   s.summary          = 'MobShield iOS RASP library suite'
   s.description      = 'Runtime self-protection for iOS. See mobshield-spec/MOBSHIELD_SPEC.md.'
   s.homepage         = 'https://github.com/Inforaam/MobShield-iOS'
@@ -107,6 +107,9 @@ Pod::Spec.new do |s|
     all.dependency 'MobShield/Environment'
     all.dependency 'MobShield/Integrity'
   end
+
+  # The script phase runs from the downloaded pod, so keep the personalize tool in it.
+  s.preserve_paths = ['scripts/mobshield-personalize.sh', 'scripts/MobShieldPersonalize.swift']
 
   s.script_phase = {
     :name => 'MobShield Personalize',
