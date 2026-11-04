@@ -44,7 +44,7 @@ MobShield raises the cost of an attack. Like any client-side protection, it can'
 | Code-signing / tamper integrity | ✅ | ✅ | ✅ |
 | Backend-verifiable report | ✅ Signed report, your own key | AppiCrypt (commercial plan) | ❌ |
 | Per-build personalization | ✅ | ❌ | ❌ |
-| Platforms | iOS + [Android](https://github.com/inforaamitsolutions/MobShield-Android) | iOS, Android, Flutter, RN, Cordova, Capacitor | iOS |
+| Platforms | iOS + [Android](https://github.com/Inforaam/MobShield-Android) | iOS, Android, Flutter, RN, Cordova, Capacitor | iOS |
 
 IOSSecuritySuite also offers proxy/VPN and Lockdown Mode detection plus active "deny" APIs, and freeRASP is ahead on cross-platform framework support. If you need those today, they're good choices. *Comparison based on each project's public README and license as of October 2026. Corrections are welcome via PR.*
 
