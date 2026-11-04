@@ -15,7 +15,9 @@
  */
 
 import Foundation
+#if canImport(MobShieldCore)
 import MobShieldCore
+#endif
 
 /// Detects Frida, Substrate, and related hook frameworks on iOS.
 public struct HookDetectionModule: DetectionModule {
@@ -24,7 +26,7 @@ public struct HookDetectionModule: DetectionModule {
     private let detectionTuning: [String: SignalTuning]
     private let nativeTimeoutNs: UInt64
     private let nativeChecker: NativeChecker
-    private let configureBaselines: () -> Void
+    private let configureBaselines: @Sendable () -> Void
 
     public let name = "hooks"
     public let criticality = 85
@@ -34,7 +36,7 @@ public struct HookDetectionModule: DetectionModule {
         detectionTuning: [String: SignalTuning]? = nil,
         nativeTimeoutMs: Int = 50,
         nativeChecker: NativeChecker = HookNativeBridge.self,
-        configureBaselines: (() -> Void)? = nil
+        configureBaselines: (@Sendable () -> Void)? = nil
     ) {
         self.detectionTuning = detectionTuning ?? config.detectionTuning
         nativeTimeoutNs = UInt64(nativeTimeoutMs) * 1_000_000

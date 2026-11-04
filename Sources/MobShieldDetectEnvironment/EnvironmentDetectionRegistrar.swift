@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+#if canImport(MobShieldCore)
 import MobShieldCore
+#endif
 
 public enum EnvironmentDetectionRegistrar {
     public static func register(config: MobShieldConfig = MobShieldConfig()) async {

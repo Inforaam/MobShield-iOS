@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+#if canImport(MobShieldCore)
 import MobShieldCore
+#endif
 
 /// Default signal names and tuning for iOS jailbreak detection.
 public enum JailbreakSignalDefaults {

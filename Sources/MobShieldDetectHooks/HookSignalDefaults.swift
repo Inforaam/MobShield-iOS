@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+#if canImport(MobShieldCore)
 import MobShieldCore
+#endif
 
 public enum HookSignalDefaults {
     public static let machRegion = "ios.hook.mach_region"

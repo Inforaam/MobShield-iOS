@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+#if canImport(MobShieldCore)
 import MobShieldCore
+#endif
 
 public enum EnvironmentSignalDefaults {
     /// Running under the iOS Simulator (maps to `EMULATOR`).

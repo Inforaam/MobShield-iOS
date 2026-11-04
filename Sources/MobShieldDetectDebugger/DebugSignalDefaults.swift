@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+#if canImport(MobShieldCore)
 import MobShieldCore
+#endif
 
 public enum DebugSignalDefaults {
     public static let sysctlTraced = "ios.debug.sysctl_traced"

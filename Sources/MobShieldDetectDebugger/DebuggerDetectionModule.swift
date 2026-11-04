@@ -15,7 +15,9 @@
  */
 
 import Foundation
+#if canImport(MobShieldCore)
 import MobShieldCore
+#endif
 
 /// Detects debuggers via sysctl, Mach exception ports, timing, and optional PT_DENY_ATTACH.
 public struct DebuggerDetectionModule: DetectionModule {

@@ -15,7 +15,9 @@
  */
 
 import Foundation
+#if canImport(MobShieldCore)
 import MobShieldCore
+#endif
 
 /// App signature, bundle ID, provisioning, resource, and receipt integrity checks.
 public struct IntegrityDetectionModule: DetectionModule {

@@ -16,7 +16,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'MobShield'
-  s.version          = '1.1.0'
+  s.version          = '1.1.1'
   s.summary          = 'MobShield iOS RASP library suite'
   s.description      = 'Runtime self-protection for iOS. See mobshield-spec/MOBSHIELD_SPEC.md.'
   s.homepage         = 'https://github.com/inforaamitsolutions/MobShield-iOS'
@@ -31,7 +31,6 @@ Pod::Spec.new do |s|
   s.subspec 'CoreNative' do |native|
     native.source_files = 'Sources/MobShieldCoreNative/**/*.{h,mm}'
     native.public_header_files = 'Sources/MobShieldCoreNative/include/*.h'
-    native.module_map = 'Sources/MobShieldCoreNative/include/module.modulemap'
     native.pod_target_xcconfig = {
       'HEADER_SEARCH_PATHS' => '$(PODS_TARGET_SRCROOT)/Sources/MobShieldCoreNative/include',
     }
@@ -45,7 +44,6 @@ Pod::Spec.new do |s|
   s.subspec 'JailbreakNative' do |native|
     native.source_files = 'Sources/MobShieldDetectJailbreakNative/**/*.{h,c,mm}'
     native.public_header_files = 'Sources/MobShieldDetectJailbreakNative/include/*.h'
-    native.module_map = 'Sources/MobShieldDetectJailbreakNative/include/module.modulemap'
     native.pod_target_xcconfig = {
       'HEADER_SEARCH_PATHS' => '$(PODS_TARGET_SRCROOT)/Sources/MobShieldDetectJailbreakNative/include',
       'OTHER_CFLAGS' => '-Wall -Werror',
@@ -63,7 +61,6 @@ Pod::Spec.new do |s|
   s.subspec 'HooksNative' do |native|
     native.source_files = 'Sources/MobShieldDetectHooksNative/**/*.{h,c,mm}'
     native.public_header_files = 'Sources/MobShieldDetectHooksNative/include/*.h'
-    native.module_map = 'Sources/MobShieldDetectHooksNative/include/module.modulemap'
     native.pod_target_xcconfig = {
       'HEADER_SEARCH_PATHS' => '$(PODS_TARGET_SRCROOT)/Sources/MobShieldDetectHooksNative/include',
       'OTHER_CFLAGS' => '-Wall -Werror',
@@ -80,7 +77,6 @@ Pod::Spec.new do |s|
   s.subspec 'DebuggerNative' do |native|
     native.source_files = 'Sources/MobShieldDetectDebuggerNative/**/*.{h,c}'
     native.public_header_files = 'Sources/MobShieldDetectDebuggerNative/include/*.h'
-    native.module_map = 'Sources/MobShieldDetectDebuggerNative/include/module.modulemap'
     native.pod_target_xcconfig = {
       'HEADER_SEARCH_PATHS' => '$(PODS_TARGET_SRCROOT)/Sources/MobShieldDetectDebuggerNative/include',
       'OTHER_CFLAGS' => '-Wall -Werror',
