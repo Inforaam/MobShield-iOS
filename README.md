@@ -140,5 +140,4 @@ For binary SwiftPM distribution, update the binary targets with `scripts/update-
 
 ## License
 
-- Swift sources and podspec: [Apache-2.0](LICENSE)
-- Native core (when implemented): [LICENSE-BSL](LICENSE-BSL), Change Date 2028-05-25
+All of MobShield iOS (Swift, C, Objective-C++ sources and the podspec) is licensed under [Apache-2.0](LICENSE).
