@@ -47,7 +47,7 @@ when…" describes the runtime condition that produces the signal.
 | `ios.jb.dyld_header` | 75 | 85 | a loaded dylib header name matches a marker |
 | `ios.jb.sandbox_break` | 75 | 80 | `fork()`/`vfork()` succeeds (sandbox escaped) |
 | `ios.jb.symlink` | 70 | 80 | a system path is a symlink (rootless remap) |
-| `ios.jb.sysctl_traced` | 70 | 75 | the `P_TRACED` process flag is set |
+| `ios.jb.sysctl_traced` | 70 | 75 | not emitted; reported as `ios.debug.sysctl_traced` |
 | `ios.jb.url_scheme` | 25 | 40 | a package-manager URL scheme is openable (`cydia://`, `sileo://`, `filza://`) |
 
 ### Hooks — module `hooks`, threat `HOOK_FRAMEWORK`
@@ -115,7 +115,7 @@ when…" describes the runtime condition that produces the signal.
 
 | Scenario | Expect fired signals | Expect threat |
 |---|---|---|
-| Jailbroken (palera1n / Dopamine / unc0ver) | ≥1 of `ios.jb.fs_probe`, `ios.jb.dyld_image`, `ios.jb.symlink`, `ios.jb.sysctl_traced` | `PRIVILEGED_ACCESS` (high/critical) |
+| Jailbroken (palera1n / Dopamine / unc0ver) | ≥1 of `ios.jb.fs_probe`, `ios.jb.dyld_image`, `ios.jb.symlink` | `PRIVILEGED_ACCESS` (high/critical) |
 | Frida gadget linked / `frida-server` running | ≥1 of `ios.hook.frida_thread`, `ios.hook.frida_symbols`, `common.hook.frida_maps`, `ios.hook.frida_port`, `ios.hook.mach_region` | `HOOK_FRAMEWORK` |
 | Debugger attached (lldb) | ≥1 of `ios.debug.mach_exception`, `ios.debug.sysctl_traced` | `DEBUGGER` |
 | Re-signed / repackaged app | `ios.integrity.sec_code` and/or `ios.integrity.bundle_id` (with anchors configured) | `APP_INTEGRITY` |

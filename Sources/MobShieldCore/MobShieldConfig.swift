@@ -51,6 +51,10 @@ public struct MobShieldConfig: Equatable, Sendable {
     public let hookSwizzleBaselines: [HookSwizzleBaseline]
     /// Build-time SHA-256 digests for bundle resources (path relative to .app root).
     public let expectedResourceHashes: [String: String]
+    /// Correlation groups keyed by signal name. Signals in one group are combined with diminishing
+    /// returns instead of added. Defaults to `DefaultSignalGroups.map`; pass `[:]` to add every
+    /// signal independently, as releases up to 1.1.2 did.
+    public let signalGroups: [String: String]
 
     public init(
         detectOnly: Bool = true,
@@ -65,7 +69,8 @@ public struct MobShieldConfig: Equatable, Sendable {
         enablePtraceDenyAttach: Bool = false,
         hookPrologueBaselines: [HookPrologueBaseline] = [],
         hookSwizzleBaselines: [HookSwizzleBaseline] = [],
-        expectedResourceHashes: [String: String] = [:]
+        expectedResourceHashes: [String: String] = [:],
+        signalGroups: [String: String] = DefaultSignalGroups.map
     ) {
         self = try! Self.make(
             detectOnly: detectOnly,
@@ -80,7 +85,8 @@ public struct MobShieldConfig: Equatable, Sendable {
             enablePtraceDenyAttach: enablePtraceDenyAttach,
             hookPrologueBaselines: hookPrologueBaselines,
             hookSwizzleBaselines: hookSwizzleBaselines,
-            expectedResourceHashes: expectedResourceHashes
+            expectedResourceHashes: expectedResourceHashes,
+            signalGroups: signalGroups
         )
     }
 
@@ -97,7 +103,8 @@ public struct MobShieldConfig: Equatable, Sendable {
         enablePtraceDenyAttach: Bool = false,
         hookPrologueBaselines: [HookPrologueBaseline] = [],
         hookSwizzleBaselines: [HookSwizzleBaseline] = [],
-        expectedResourceHashes: [String: String] = [:]
+        expectedResourceHashes: [String: String] = [:],
+        signalGroups: [String: String] = DefaultSignalGroups.map
     ) throws -> MobShieldConfig {
         try validateSigners(expectedSigners)
         try validateResourceHashes(expectedResourceHashes)
@@ -124,6 +131,7 @@ public struct MobShieldConfig: Equatable, Sendable {
             hookPrologueBaselines: hookPrologueBaselines,
             hookSwizzleBaselines: hookSwizzleBaselines,
             expectedResourceHashes: expectedResourceHashes,
+            signalGroups: signalGroups,
             skipValidation: true
         )
     }
@@ -142,6 +150,7 @@ public struct MobShieldConfig: Equatable, Sendable {
         hookPrologueBaselines: [HookPrologueBaseline],
         hookSwizzleBaselines: [HookSwizzleBaseline],
         expectedResourceHashes: [String: String],
+        signalGroups: [String: String],
         skipValidation: Bool
     ) {
         _ = skipValidation
@@ -158,6 +167,7 @@ public struct MobShieldConfig: Equatable, Sendable {
         self.hookPrologueBaselines = hookPrologueBaselines
         self.hookSwizzleBaselines = hookSwizzleBaselines
         self.expectedResourceHashes = expectedResourceHashes
+        self.signalGroups = signalGroups
     }
 
     public static func validateResourceHashes(_ hashes: [String: String]) throws {

@@ -58,7 +58,9 @@ public struct JailbreakDetectionModule: DetectionModule {
             group.addTask { await self.runCheck(JailbreakSignalDefaults.filesystemPaths) { self.nativeChecker.filesystemPaths() } }
             group.addTask { await self.runCheck(JailbreakSignalDefaults.sandboxEscape) { self.nativeChecker.sandboxEscape() } }
             group.addTask { await self.runCheck(JailbreakSignalDefaults.urlScheme) { self.nativeChecker.urlSchemeProbe() } }
-            group.addTask { await self.runCheck(JailbreakSignalDefaults.sysctlTraced) { self.nativeChecker.sysctlTraced() } }
+            // `ios.jb.sysctl_traced` is not emitted: P_TRACED means a debugger is attached, which the
+            // debugger module already reports as `ios.debug.sysctl_traced`. Emitting it here too made an
+            // attached debugger raise a jailbreak alert.
             group.addTask { await self.runCheck(JailbreakSignalDefaults.writeTest) { self.nativeChecker.writeTest() } }
             group.addTask { await self.runCheck(JailbreakSignalDefaults.symlinkTest) { self.nativeChecker.symlinkTest() } }
             group.addTask { await self.runCheck(JailbreakSignalDefaults.dyldHeader) { self.nativeChecker.dyldHeaderInspect() } }
