@@ -10,7 +10,11 @@ permissions:
 
 jobs:
   build-test:
-    runs-on: macos-14
+    # macos-14 was retired on 2026-11-02. Pin Xcode so a change to the
+    # image's default does not silently change the toolchain.
+    runs-on: macos-15
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
     steps:
       - uses: actions/checkout@v4
 
@@ -26,14 +30,14 @@ jobs:
         run: |
           xcodebuild build \
             -scheme MobShield-Package \
-            -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' \
             -skipPackagePluginValidation
 
       - name: Test (iOS Simulator)
         run: |
           xcodebuild test \
             -scheme MobShield-Package \
-            -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' \
             -skipPackagePluginValidation
 
       - name: Build sample app (iOS Simulator)
@@ -41,6 +45,6 @@ jobs:
           xcodebuild build \
             -project MobShieldSampleApp/MobShieldSampleApp.xcodeproj \
             -scheme MobShieldSampleApp \
-            -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.5' \
             -skipPackagePluginValidation \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" DEVELOPMENT_TEAM=""
