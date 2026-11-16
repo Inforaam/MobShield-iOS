@@ -14,9 +14,19 @@
  * limitations under the License.
  */
 
-/// Process exit policy (freeRASP killOnBypass equivalent). Default is no termination.
+/// Process exit policy. Default is no termination.
+///
+/// A threat ends the process only when all of these hold: `detectOnly` is false; its event reaches
+/// the policy's severity; at least one of its signals reaches HIGH on its own, so weak hints that only
+/// add up never terminate; and its type is in `MobShieldConfig.terminateOn`.
+///
+/// Termination is a deterrent, not a security boundary: code that can hook the app can also stop the
+/// exit call. See `docs/termination.md`.
 public enum TerminationPolicy: String, Sendable {
+    /// Never terminate.
     case none = "NONE"
+    /// Terminate on a corroborated threat of severity HIGH or above.
     case exitOnBypass = "EXIT_ON_BYPASS"
+    /// Terminate only on a corroborated threat of severity CRITICAL.
     case exitOnCritical = "EXIT_ON_CRITICAL"
 }

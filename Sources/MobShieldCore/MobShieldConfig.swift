@@ -55,6 +55,10 @@ public struct MobShieldConfig: Equatable, Sendable {
     /// returns instead of added. Defaults to `DefaultSignalGroups.map`; pass `[:]` to add every
     /// signal independently, as releases up to 1.1.2 did.
     public let signalGroups: [String: String]
+    /// Threat types allowed to end the process under `terminationPolicy`. Defaults to every type.
+    /// Remove a type, for example `.privilegedAccess`, to keep reporting it without ever terminating
+    /// for it. See `docs/termination.md`.
+    public let terminateOn: Set<ThreatType>
 
     public init(
         detectOnly: Bool = true,
@@ -70,7 +74,8 @@ public struct MobShieldConfig: Equatable, Sendable {
         hookPrologueBaselines: [HookPrologueBaseline] = [],
         hookSwizzleBaselines: [HookSwizzleBaseline] = [],
         expectedResourceHashes: [String: String] = [:],
-        signalGroups: [String: String] = DefaultSignalGroups.map
+        signalGroups: [String: String] = DefaultSignalGroups.map,
+        terminateOn: Set<ThreatType> = Set(ThreatType.allCases)
     ) {
         self = try! Self.make(
             detectOnly: detectOnly,
@@ -86,7 +91,8 @@ public struct MobShieldConfig: Equatable, Sendable {
             hookPrologueBaselines: hookPrologueBaselines,
             hookSwizzleBaselines: hookSwizzleBaselines,
             expectedResourceHashes: expectedResourceHashes,
-            signalGroups: signalGroups
+            signalGroups: signalGroups,
+            terminateOn: terminateOn
         )
     }
 
@@ -104,7 +110,8 @@ public struct MobShieldConfig: Equatable, Sendable {
         hookPrologueBaselines: [HookPrologueBaseline] = [],
         hookSwizzleBaselines: [HookSwizzleBaseline] = [],
         expectedResourceHashes: [String: String] = [:],
-        signalGroups: [String: String] = DefaultSignalGroups.map
+        signalGroups: [String: String] = DefaultSignalGroups.map,
+        terminateOn: Set<ThreatType> = Set(ThreatType.allCases)
     ) throws -> MobShieldConfig {
         try validateSigners(expectedSigners)
         try validateResourceHashes(expectedResourceHashes)
@@ -132,6 +139,7 @@ public struct MobShieldConfig: Equatable, Sendable {
             hookSwizzleBaselines: hookSwizzleBaselines,
             expectedResourceHashes: expectedResourceHashes,
             signalGroups: signalGroups,
+            terminateOn: terminateOn,
             skipValidation: true
         )
     }
@@ -151,6 +159,7 @@ public struct MobShieldConfig: Equatable, Sendable {
         hookSwizzleBaselines: [HookSwizzleBaseline],
         expectedResourceHashes: [String: String],
         signalGroups: [String: String],
+        terminateOn: Set<ThreatType>,
         skipValidation: Bool
     ) {
         _ = skipValidation
@@ -168,6 +177,7 @@ public struct MobShieldConfig: Equatable, Sendable {
         self.hookSwizzleBaselines = hookSwizzleBaselines
         self.expectedResourceHashes = expectedResourceHashes
         self.signalGroups = signalGroups
+        self.terminateOn = terminateOn
     }
 
     public static func validateResourceHashes(_ hashes: [String: String]) throws {
@@ -210,6 +220,8 @@ public extension MobShieldConfig {
         private var hookPrologueBaselines: [HookPrologueBaseline] = []
         private var hookSwizzleBaselines: [HookSwizzleBaseline] = []
         private var expectedResourceHashes: [String: String] = [:]
+        private var signalGroups = DefaultSignalGroups.map
+        private var terminateOn = Set(ThreatType.allCases)
 
         public init() {}
 
@@ -291,6 +303,18 @@ public extension MobShieldConfig {
             return copy
         }
 
+        public func signalGroups(_ value: [String: String]) -> Builder {
+            var copy = self
+            copy.signalGroups = value
+            return copy
+        }
+
+        public func terminateOn(_ value: Set<ThreatType>) -> Builder {
+            var copy = self
+            copy.terminateOn = value
+            return copy
+        }
+
         public func build() throws -> MobShieldConfig {
             try MobShieldConfig.make(
                 detectOnly: detectOnly,
@@ -305,7 +329,9 @@ public extension MobShieldConfig {
                 enablePtraceDenyAttach: enablePtraceDenyAttach,
                 hookPrologueBaselines: hookPrologueBaselines,
                 hookSwizzleBaselines: hookSwizzleBaselines,
-                expectedResourceHashes: expectedResourceHashes
+                expectedResourceHashes: expectedResourceHashes,
+                signalGroups: signalGroups,
+                terminateOn: terminateOn
             )
         }
     }
