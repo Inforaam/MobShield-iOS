@@ -10,7 +10,7 @@ This module implements eight native checks and aggregates signals into `PRIVILEG
 | `ios.jb.fs_probe` | `stat()` + `access()` on known JB paths | 85 | 90 |
 | `ios.jb.sandbox_break` | `fork()` / `vfork()` sandbox escape | 75 | 80 |
 | `ios.jb.url_scheme` | `canOpenURL` for package manager schemes | 25 | 40 |
-| `ios.jb.sysctl_traced` | `sysctl` `P_TRACED` on self | 70 | 75 |
+| `ios.jb.sysctl_traced` | No longer emitted (see below and [scoring](../scoring.md)) | 70 | 75 |
 | `ios.jb.write_test` | write probe outside sandbox | 80 | 85 |
 | `ios.jb.symlink` | `lstat` symlink on `/Applications` | 70 | 80 |
 | `ios.jb.dyld_header` | Mach-O `MH_DYLIB` suspicious names | 75 | 85 |
@@ -53,7 +53,7 @@ Uses public `-[UIApplication canOpenURL:]` for `cydia://`, `sileo://`, `zbra://`
 
 ### 5. sysctl_traced.c
 
-Reads `KERN_PROC_PID` and checks `P_TRACED`. Useful when a debugger is attached during JB testing; can overlap debugger detection.
+Reads `KERN_PROC_PID` and checks `P_TRACED`. **No longer emitted by the jailbreak module**: `P_TRACED` means a debugger is attached, and the debugger module already reports it as `ios.debug.sysctl_traced`. Counting it here as well turned every attached debugger into a HIGH jailbreak event.
 
 ### 6. write_test.c
 
@@ -107,7 +107,7 @@ On Simulator builds:
 - `sandbox_escape` returns `UNAVAILABLE` because `fork()` is not a reliable jailbreak indicator on Simulator hosts.
 - `filesystem_paths` uses a reduced path list (package-manager artifacts only). Generic Unix paths such as `/bin/bash` and bare `/var/jb` are omitted to avoid host filesystem false positives.
 
-`sysctl_traced` may report `P_TRACED` when Xcode attaches a debugger during development or XCTest runs. Treat that signal as a weak hint or tune it down in debug builds.
+`sysctl_traced` reports `P_TRACED`, which is set whenever a debugger is attached (including Xcode during development and XCTest runs). It indicates a debugger, not a jailbreak, so the jailbreak module no longer emits it; the debugger module reports the same check as `ios.debug.sysctl_traced`.
 
 Validate on physical jailbroken devices (Dopamine, palera1n, unc0ver) before relying on thresholds in production.
 

@@ -164,6 +164,7 @@ swift test
 ## Documentation
 
 - [Detection validation matrix](docs/validation.md) — every signal each module emits and the clean vs compromised baselines.
+- [Scoring model](docs/scoring.md) — how signals become scores and severities, correlation groups, what one signal can do alone, and the limits of the default weights.
 - [On-device validation runbook](docs/validation-device-runbook.md) — validate against a real jailbreak / Frida / debugger.
 - [Xcode integration notes](docs/integration-xcode.md).
 

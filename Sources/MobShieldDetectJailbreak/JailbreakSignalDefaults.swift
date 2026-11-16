@@ -24,6 +24,8 @@ public enum JailbreakSignalDefaults {
     public static let filesystemPaths = "ios.jb.fs_probe"
     public static let sandboxEscape = "ios.jb.sandbox_break"
     public static let urlScheme = "ios.jb.url_scheme"
+    /// No longer emitted by `JailbreakDetectionModule`; kept for source compatibility. P_TRACED is a
+    /// debugger signal and is reported as `ios.debug.sysctl_traced` by the debugger module.
     public static let sysctlTraced = "ios.jb.sysctl_traced"
     public static let writeTest = "ios.jb.write_test"
     public static let symlinkTest = "ios.jb.symlink"

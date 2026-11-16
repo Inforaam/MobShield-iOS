@@ -20,7 +20,7 @@ import Foundation
 public final class MobShield: @unchecked Sendable {
     public static let shared = MobShield()
 
-    public static let signalSetVersion = "signals-2026.05.0"
+    public static let signalSetVersion = "signals-2026.11.0"
 
     private let lock = NSLock()
     private var engine: MobShieldEngine?

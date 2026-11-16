@@ -73,11 +73,52 @@ public struct SignalAggregator: Sendable {
     }
 
     private func computeScore(signals: [Signal]) -> Int {
-        var total = 0.0
+        Self.scoreOf(signals: signals, groups: config.signalGroups)
+    }
+
+    /// Full scale (100 points) in hundredths of a point.
+    private static let fullScale = 10_000
+    private static let hundredthsPerPoint = 100
+    private static let maxScore = 100
+
+    /// Scores signals that already belong to one threat type.
+    ///
+    /// Each signal contributes `weight * confidence / 100` points. Signals that share a correlation
+    /// group are combined with noisy-OR, `100 * (1 - prod(1 - c / 100))`, so one artifact seen by
+    /// several checks is not counted several times; a group is never below its strongest member nor
+    /// above their sum. Groups and ungrouped signals are added, capped at 100 and truncated.
+    /// Arithmetic is in integer hundredths of a point, so results are exact and match Android.
+    public static func scoreOf(signals: [Signal], groups: [String: String]) -> Int {
+        var hundredths = 0
+        var grouped: [String: [Int]] = [:]
         for signal in signals {
-            total += Double(signal.weight) * (Double(signal.confidence) / 100.0)
+            let contribution = signal.weight * signal.confidence
+            if let group = groups[signal.name] {
+                grouped[group, default: []].append(contribution)
+            } else {
+                hundredths += contribution
+            }
         }
-        return min(100, max(0, Int(total)))
+        for contributions in grouped.values {
+            hundredths += combineCorrelated(contributions)
+        }
+        return min(maxScore, max(0, hundredths / hundredthsPerPoint))
+    }
+
+    /// Noisy-OR of contributions given in hundredths of a point (0...10 000). The running complement
+    /// is rounded up at each step, so the combined value is never overstated, and a single
+    /// contribution is returned unchanged.
+    static func combineCorrelated(_ contributions: [Int]) -> Int {
+        var complement = fullScale
+        for contribution in contributions.sorted(by: >) {
+            let remaining = fullScale - min(fullScale, max(0, contribution))
+            complement = ceilDiv(complement * remaining, fullScale)
+        }
+        return fullScale - complement
+    }
+
+    private static func ceilDiv(_ numerator: Int, _ denominator: Int) -> Int {
+        (numerator + denominator - 1) / denominator
     }
 
     private func mapSeverity(type: ThreatType, score: Int, threshold: ThreatThreshold) -> Severity {
