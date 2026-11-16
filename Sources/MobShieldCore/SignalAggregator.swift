@@ -72,6 +72,19 @@ public struct SignalAggregator: Sendable {
         return events.sorted { $0.score > $1.score }
     }
 
+    /// Threat types for which at least one of `signals`, scored as the only signal of its type,
+    /// reaches `.high`. Termination requires this, so that several weak hints that only add up to
+    /// HIGH or CRITICAL report a threat but never end the process. See `docs/termination.md`.
+    func typesWithStrongSignal(signals: [Signal]) -> Set<ThreatType> {
+        var types = Set<ThreatType>()
+        for signal in signals where aggregate(signals: [signal]).contains(where: { $0.severity >= .high }) {
+            if let type = Self.resolveThreatType(signalName: signal.name) {
+                types.insert(type)
+            }
+        }
+        return types
+    }
+
     private func computeScore(signals: [Signal]) -> Int {
         Self.scoreOf(signals: signals, groups: config.signalGroups)
     }
