@@ -68,11 +68,13 @@ final class MobShieldEngine: @unchecked Sendable {
     /// Terminates the process (and ends the loop) once the configured policy is satisfied.
     private func runScanLoop() async {
         while !Task.isCancelled {
-            let events = await runScanWave()
+            let wave = await runScanWave()
             if MobShieldEngine.shouldTerminate(
-                events: events,
+                events: wave.events,
                 detectOnly: config.detectOnly,
-                policy: config.terminationPolicy
+                policy: config.terminationPolicy,
+                typesWithStrongSignal: wave.typesWithStrongSignal,
+                terminateOn: config.terminateOn
             ) {
                 terminate()
                 return
@@ -91,25 +93,39 @@ final class MobShieldEngine: @unchecked Sendable {
     /// Decides whether the current scan results warrant process termination.
     ///
     /// - `.none` (and any `detectOnly` config): never terminates.
-    /// - `.exitOnBypass`: terminates when any threat reaches `.high` or above — a confirmed
-    ///   compromise of the protected environment.
-    /// - `.exitOnCritical`: terminates only when a threat reaches `.critical`.
+    /// - `.exitOnBypass`: an event of severity `.high` or above.
+    /// - `.exitOnCritical`: an event of severity `.critical`.
+    ///
+    /// In both cases the event's type must be in `typesWithStrongSignal` (at least one of its
+    /// signals reaches HIGH on its own) and in `terminateOn`.
     static func shouldTerminate(
         events: [ThreatEvent],
         detectOnly: Bool,
-        policy: TerminationPolicy
+        policy: TerminationPolicy,
+        typesWithStrongSignal: Set<ThreatType>,
+        terminateOn: Set<ThreatType>
     ) -> Bool {
         guard !detectOnly else {
             return false
         }
+        let minimum: Severity
         switch policy {
         case .none:
             return false
         case .exitOnBypass:
-            return events.contains { severityRank($0.severity) >= severityRank(.high) }
+            minimum = .high
         case .exitOnCritical:
-            return events.contains { $0.severity == .critical }
+            minimum = .critical
         }
+        return events.contains {
+            $0.severity >= minimum && typesWithStrongSignal.contains($0.type) && terminateOn.contains($0.type)
+        }
+    }
+
+    /// One scan wave's events, plus the threat types that have a signal reaching HIGH on its own.
+    private struct ScanWave {
+        let events: [ThreatEvent]
+        let typesWithStrongSignal: Set<ThreatType>
     }
 
     static let defaultTerminate: @Sendable () -> Void = {
@@ -160,7 +176,7 @@ final class MobShieldEngine: @unchecked Sendable {
     }
 
     @discardableResult
-    private func runScanWave() async -> [ThreatEvent] {
+    private func runScanWave() async -> ScanWave {
         let modules = await resolveModules()
 
         var signals = await withTaskGroup(of: [Signal].self) { group in
@@ -188,7 +204,7 @@ final class MobShieldEngine: @unchecked Sendable {
         }
         listener.onAllChecksFinished(events)
         updateState(events: events, running: true)
-        return events
+        return ScanWave(events: events, typesWithStrongSignal: aggregator.typesWithStrongSignal(signals: signals))
     }
 
     private func updateState(events: [ThreatEvent], running: Bool) {

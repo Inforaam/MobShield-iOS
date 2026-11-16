@@ -147,6 +147,11 @@ let config = try MobShieldConfig.builder()
     .build()
 ```
 
+Before turning termination on, read [docs/termination.md](docs/termination.md): termination needs a
+signal that is strong on its own, `terminateOn` limits which threat types can end the process (the
+Simulator is CRITICAL), and a hooked app can block the exit call, so termination is a deterrent rather
+than a security boundary.
+
 For a signed posture report you can verify on your backend, see `MobShield.shared.currentSignedReport(key:)`.
 
 ## Build and test
@@ -165,6 +170,7 @@ swift test
 
 - [Detection validation matrix](docs/validation.md) — every signal each module emits and the clean vs compromised baselines.
 - [Scoring model](docs/scoring.md) — how signals become scores and severities, correlation groups, what one signal can do alone, and the limits of the default weights.
+- [Process termination](docs/termination.md) — when a termination policy ends the process, how to keep a threat type report-only, and why termination is not a security boundary.
 - [On-device validation runbook](docs/validation-device-runbook.md) — validate against a real jailbreak / Frida / debugger.
 - [Xcode integration notes](docs/integration-xcode.md).
 
