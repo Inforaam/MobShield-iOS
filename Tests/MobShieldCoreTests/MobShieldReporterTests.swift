@@ -52,7 +52,7 @@ final class MobShieldReporterTests: XCTestCase {
         XCTAssertEqual(a, b)
         // Keys are sorted → "buildId" precedes "riskLevel" in the byte stream.
         let text = String(bytes: a, encoding: .utf8) ?? ""
-        XCTAssertTrue(text.contains("\"schemaVersion\":\"report-1\""))
+        XCTAssertTrue(text.contains("\"schemaVersion\":\"report-2\""))
     }
 
     func testSign_matchesIndependentlyComputedHMAC() throws {
