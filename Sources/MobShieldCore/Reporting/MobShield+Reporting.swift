@@ -27,9 +27,32 @@ public extension MobShield {
         )
     }
 
-    /// The current report as canonical JSON plus an HMAC-SHA256 signature under `key`. Transmit
-    /// both to your backend; the backend recomputes the HMAC over the received JSON to verify the
-    /// report was produced by a build holding the shared key and was not altered in transit.
+    /// The current report, answering the server-issued `challenge`.
+    func currentReport(challenge: Data) throws -> ThreatReport {
+        try MobShieldReporter.makeReport(
+            state: getState(),
+            events: getLastEvents(),
+            buildId: MobShield.getBuildId(),
+            challenge: challenge
+        )
+    }
+
+    /// The current report, answering the server-issued `challenge`, with an App Attest assertion
+    /// from `attester`'s key. Attest the key once with ``MobShieldAppAttest/attestKey(challenge:)``
+    /// first. Verify the result on your backend as described in `docs/report-attestation.md`.
+    func currentAttestedReport(challenge: Data, attester: MobShieldAppAttest) async throws -> AttestedThreatReport {
+        try await attester.attest(currentReport(challenge: challenge))
+    }
+
+    /// The current report as canonical JSON plus an HMAC-SHA256 signature under `key`.
+    ///
+    /// The key ships inside the app, so anyone who can read or hook the app can sign a clean report
+    /// with it, and the report can be replayed. Use ``currentAttestedReport(challenge:attester:)``.
+    @available(
+        *,
+        deprecated,
+        message: "An HMAC key shipped in the app cannot prove where a report came from. Use currentAttestedReport; see docs/report-attestation.md."
+    )
     func currentSignedReport(key: Data) throws -> SignedThreatReport {
         try MobShieldReporter.sign(currentReport(), key: key)
     }

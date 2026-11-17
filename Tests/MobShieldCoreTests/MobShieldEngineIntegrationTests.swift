@@ -114,22 +114,47 @@ final class MobShieldEngineIntegrationTests: XCTestCase {
         let medium = [event(.medium)]
 
         // .none never terminates.
-        XCTAssertFalse(MobShieldEngine.shouldTerminate(events: critical, detectOnly: false, policy: .none))
+        XCTAssertFalse(terminates(critical, .none))
 
         // detectOnly overrides any policy (defense-in-depth alongside config validation).
-        XCTAssertFalse(MobShieldEngine.shouldTerminate(events: critical, detectOnly: true, policy: .exitOnCritical))
+        XCTAssertFalse(terminates(critical, .exitOnCritical, detectOnly: true))
 
         // .exitOnCritical fires only at critical.
-        XCTAssertTrue(MobShieldEngine.shouldTerminate(events: critical, detectOnly: false, policy: .exitOnCritical))
-        XCTAssertFalse(MobShieldEngine.shouldTerminate(events: high, detectOnly: false, policy: .exitOnCritical))
+        XCTAssertTrue(terminates(critical, .exitOnCritical))
+        XCTAssertFalse(terminates(high, .exitOnCritical))
 
         // .exitOnBypass fires at high or above.
-        XCTAssertTrue(MobShieldEngine.shouldTerminate(events: high, detectOnly: false, policy: .exitOnBypass))
-        XCTAssertTrue(MobShieldEngine.shouldTerminate(events: critical, detectOnly: false, policy: .exitOnBypass))
-        XCTAssertFalse(MobShieldEngine.shouldTerminate(events: medium, detectOnly: false, policy: .exitOnBypass))
+        XCTAssertTrue(terminates(high, .exitOnBypass))
+        XCTAssertTrue(terminates(critical, .exitOnBypass))
+        XCTAssertFalse(terminates(medium, .exitOnBypass))
 
         // No events → never terminate.
-        XCTAssertFalse(MobShieldEngine.shouldTerminate(events: [], detectOnly: false, policy: .exitOnBypass))
+        XCTAssertFalse(terminates([], .exitOnBypass))
+
+        // Without a strong signal of its own type, no event terminates.
+        XCTAssertFalse(terminates(critical, .exitOnCritical, strongTypes: []))
+        XCTAssertFalse(terminates(critical, .exitOnCritical, strongTypes: [.hookFramework]))
+
+        // A type left out of terminateOn never terminates.
+        var allButRoot = Set(ThreatType.allCases)
+        allButRoot.remove(.privilegedAccess)
+        XCTAssertFalse(terminates(critical, .exitOnCritical, terminateOn: allButRoot))
+    }
+
+    private func terminates(
+        _ events: [ThreatEvent],
+        _ policy: TerminationPolicy,
+        detectOnly: Bool = false,
+        strongTypes: Set<ThreatType> = Set(ThreatType.allCases),
+        terminateOn: Set<ThreatType> = Set(ThreatType.allCases)
+    ) -> Bool {
+        MobShieldEngine.shouldTerminate(
+            events: events,
+            detectOnly: detectOnly,
+            policy: policy,
+            typesWithStrongSignal: strongTypes,
+            terminateOn: terminateOn
+        )
     }
 
     func testEngine_exitOnCritical_terminatesOnCriticalThreat() async {

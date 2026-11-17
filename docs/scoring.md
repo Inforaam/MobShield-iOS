@@ -128,6 +128,8 @@ What this means in practice:
   Frida port probe is deliberately weak on iOS (LOW alone) because the port is easy to change.
 - **Running in the Simulator is CRITICAL** for `EMULATOR`. Expect this during development.
 - **An invalid code signature is CRITICAL on its own.**
+- **Only a signal rated HIGH or CRITICAL here can trigger termination.** Weak hints that add up to
+  HIGH or CRITICAL are reported but never end the process; see [termination.md](termination.md).
 
 `ios.jb.sysctl_traced` is no longer emitted. It checked `P_TRACED`, which means a debugger is
 attached, not that the device is jailbroken; the debugger module already reports the same check as
