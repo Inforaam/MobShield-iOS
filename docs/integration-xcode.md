@@ -1,6 +1,6 @@
 # Xcode integration
 
-MobShield personalization runs as a Run Script build phase before native compilation so each app build embeds unique constants in `mobshield_buildinfo.h`.
+MobShield personalization runs as a Run Script build phase before compilation and writes a public build ID and your expected signing values to `mobshield_buildinfo.h`. It holds no secrets, and with Swift Package Manager it does not change MobShield's binary; see [personalization.md](personalization.md).
 
 ## Build phase order
 
@@ -64,9 +64,9 @@ The `MobShield.podspec` includes a personalize script phase on consumer targets 
 |---------|-----|
 | Script does not run every build | Disable "Based on dependency analysis" for the Run Script phase |
 | Header not found | Add `$(DERIVED_FILE_DIR)` to **Header Search Paths** |
-| Verify fails on entropy | Ensure personalize runs before compile and `mobshield_buildinfo.h` is included by native targets |
+| Verify warns that the build ID was not found | MobShield's native code used its bundled header; this is expected with Swift Package Manager (see [personalization.md](personalization.md)) |
 | Signing mismatch | Update `MOBSHIELD_EXPECTED_SIGNER_SHA256` for the configuration you build (Debug vs Release) |
 
 ## Reproducibility
 
-Personalized binaries are **not** reproducible across builds by design. Only generic MobShield source releases are reproducible from git tags.
+The generated header changes with every new seed. Set `MOBSHIELD_RANDOM_SEED` for a reproducible header. MobShield's own binaries are reproducible from git tags.

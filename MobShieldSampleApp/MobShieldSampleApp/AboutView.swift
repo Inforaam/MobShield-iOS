@@ -24,9 +24,9 @@ struct AboutView: View {
             List {
                 Section("SDK") {
                     HStack { Text("Version"); Spacer(); Text(model.sdkVersion) }
-                    HStack { Text("Build entropy"); Spacer(); Text(model.buildEntropyPreview) }
+                    HStack { Text("Build ID"); Spacer(); Text(model.buildId) }
                     HStack { Text("Native self-check"); Spacer(); Text(String(model.nativeSelfCheck)) }
-                    Text("Personalized native binaries are not reproducible across builds.")
+                    Text("The build ID is public and safe to log.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

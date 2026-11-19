@@ -113,8 +113,7 @@ enum SampleMobShieldController {
         return output
     }
 
-    static func buildEntropyPreview() -> String {
-        let buildId = MobShield.getBuildId()
-        return String(buildId.prefix(8))
+    static func buildId() -> String {
+        MobShield.getBuildId()
     }
 }

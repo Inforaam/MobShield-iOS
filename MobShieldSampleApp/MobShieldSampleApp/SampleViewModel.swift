@@ -28,7 +28,7 @@ final class SampleViewModel: ObservableObject {
     @Published private(set) var posture = PostureSnapshot.idle
 
     let sdkVersion = MobShield.getVersion()
-    let buildEntropyPreview = SampleMobShieldController.buildEntropyPreview()
+    let buildId = SampleMobShieldController.buildId()
     let nativeSelfCheck = MobShield.selfCheck()
     let masvsRows = MasvsCatalog.rows
 
@@ -88,7 +88,7 @@ final class SampleViewModel: ObservableObject {
             validation = ValidationDisplay(
                 report: report,
                 sdkVersion: sdkVersion,
-                buildEntropyPreview: buildEntropyPreview
+                buildId: buildId
             )
             validationLoading = false
         }
@@ -189,7 +189,7 @@ struct ValidationDisplay {
     let firedSignalCount: Int
     let exportText: String
 
-    init(report: ValidationReport, sdkVersion: String, buildEntropyPreview: String) {
+    init(report: ValidationReport, sdkVersion: String, buildId: String) {
         modules = report.modules.map { result in
             Module(
                 id: result.moduleName,
@@ -205,18 +205,18 @@ struct ValidationDisplay {
         exportText = ValidationDisplay.makeExportText(
             report: report,
             sdkVersion: sdkVersion,
-            buildEntropyPreview: buildEntropyPreview
+            buildId: buildId
         )
     }
 
     private static func makeExportText(
         report: ValidationReport,
         sdkVersion: String,
-        buildEntropyPreview: String
+        buildId: String
     ) -> String {
         var lines: [String] = []
         lines.append("MobShield validation report")
-        lines.append("SDK \(sdkVersion) · build \(buildEntropyPreview) · t=\(report.generatedAtMs)ms")
+        lines.append("SDK \(sdkVersion) · build \(buildId) · t=\(report.generatedAtMs)ms")
         lines.append("Highest severity: \(report.highestSeverity?.rawValue ?? "NONE")"
             + " · signals fired: \(report.firedSignalNames.count)")
         lines.append("")

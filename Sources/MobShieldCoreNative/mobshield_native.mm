@@ -24,9 +24,10 @@
 
 namespace {
 bool g_initialized = false;
-// Baked into .rodata so mobshield-verify can locate entropy in the linked binary.
-__attribute__((used)) static const char kMobShieldEntropyAnchor[] =
-    "MOBSHIELD_ENTROPY=" MOBSHIELD_BUILD_ENTROPY;
+// Kept in the binary so mobshield-verify can check whether the native code was built with this
+// build's header. The build ID is public; nothing secret may be embedded here.
+__attribute__((used)) static const char kMobShieldBuildIdAnchor[] =
+    "MOBSHIELD_BUILD_ID=" MOBSHIELD_BUILD_ID;
 }  // namespace
 
 int mobshield_native_init(void) {
