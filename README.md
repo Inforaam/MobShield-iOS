@@ -1,6 +1,6 @@
 # MobShield iOS
 
-Open-source mobile app hardening for iOS: modular RASP detectors, signal aggregation, and per-build native personalization.
+Open-source mobile app hardening for iOS: modular RASP detectors, signal aggregation, and server-verifiable reports.
 
 [![iOS CI](https://github.com/Inforaam/MobShield-iOS/actions/workflows/ios-ci.yml/badge.svg)](https://github.com/Inforaam/MobShield-iOS/actions/workflows/ios-ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
@@ -25,7 +25,6 @@ MobShield runs a set of detection modules, aggregates their weighted signals int
 - **No telemetry.** MobShield makes no network calls. Threat events go only to your listener and, if you choose, your backend.
 - **Modular.** Add only the products you need.
 - **Safe to roll out.** It's detect-only by default and never kills your process unless you opt in.
-- **Harder to bypass generically.** A personalization build phase makes each build unique, so one off-the-shelf bypass script doesn't fit every app.
 - **Server-verifiable.** Posture reports answer a challenge from your server and carry an App Attest assertion, so your backend can check where a report came from and that it is fresh.
 
 MobShield raises the cost of an attack. Like any client-side protection, it can't make an app unbreakable, so pair it with server-side checks.
@@ -43,7 +42,6 @@ MobShield raises the cost of an attack. Like any client-side protection, it can'
 | Simulator / automation | ✅ | ✅ | ✅ (simulator) |
 | Code-signing / tamper integrity | ✅ | ✅ | ✅ |
 | Backend-verifiable report | ✅ App Attest, your own server | AppiCrypt (commercial plan) | ❌ |
-| Per-build personalization | ✅ | ❌ | ❌ |
 | Platforms | iOS + [Android](https://github.com/Inforaam/MobShield-Android) | iOS, Android, Flutter, RN, Cordova, Capacitor | iOS |
 
 IOSSecuritySuite also offers proxy/VPN and Lockdown Mode detection plus active "deny" APIs, and freeRASP is ahead on cross-platform framework support. If you need those today, they're good choices. *Comparison based on each project's public README and license as of October 2026. Corrections are welcome via PR.*
@@ -91,7 +89,7 @@ dependencies: [
 pod 'MobShield/All', '1.1.2'
 ```
 
-Add `scripts/mobshield-personalize.sh` as a Run Script build phase (see `MobShieldSampleApp`).
+The pod runs `scripts/mobshield-personalize.sh` as a build phase. It sets a public build ID and does not usually change the binary; see [docs/personalization.md](docs/personalization.md).
 
 ## Quick start
 
@@ -174,6 +172,7 @@ swift test
 - [Detection validation matrix](docs/validation.md) — every signal each module emits and the clean vs compromised baselines.
 - [Scoring model](docs/scoring.md) — how signals become scores and severities, correlation groups, what one signal can do alone, and the limits of the default weights.
 - [Process termination](docs/termination.md) — when a termination policy ends the process, how to keep a threat type report-only, and why termination is not a security boundary.
+- [Build personalization](docs/personalization.md) — what the build phase does, why prebuilt binaries are the same in every app, and why the app holds no secrets.
 - [Verifying reports on your server](docs/report-attestation.md) — server challenges, App Attest, what the server must check, and what a verified report cannot prove.
 - [On-device validation runbook](docs/validation-device-runbook.md) — validate against a real jailbreak / Frida / debugger.
 - [Xcode integration notes](docs/integration-xcode.md).

@@ -22,7 +22,7 @@ A repackaged IPA typically changes one or more of:
 4. **Resources** (`Info.plist`, storyboards, assets tampered)
 5. **App Store receipt** (missing, truncated, or non-PKCS#7 payload on sideload builds)
 
-MobShield compares live runtime values to anchors baked into `MobShieldConfig` at build time via the personalization plugin.
+MobShield compares live runtime values to anchors you set in `MobShieldConfig`.
 
 Attackers who strip signatures entirely often fail `SecCodeCopySigningInformation` or present certificates outside the allowlist. Attackers who re-sign with their own developer certificate are caught when `expectedSigners` and `expectedPackageId` do not match.
 
@@ -60,7 +60,7 @@ Reads `embedded.mobileprovision`, extracts the XML plist, and compares `applicat
 
 ### Resource integrity
 
-Hashes files at anchored paths with SHA-256 (CryptoKit). The personalization script should record digests for `Info.plist` and the main storyboard (`UIMainStoryboardFile`).
+Hashes files at anchored paths with SHA-256 (CryptoKit). Record digests for `Info.plist` and the main storyboard (`UIMainStoryboardFile`) for your build and pass them in `MobShieldConfig`; the personalize build phase does not record them.
 
 ### App Store receipt
 

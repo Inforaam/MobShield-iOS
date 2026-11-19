@@ -40,4 +40,4 @@ See [integration-xcode.md](../docs/integration-xcode.md) for signing cert SHA-25
 | Threats | Live threat event cards |
 | Config | Detect-only vs fail-closed, module toggles, ptrace option |
 | Signals | Raw `Signal` list from enabled modules |
-| About | SDK version, build entropy preview, MASVS summary |
+| About | SDK version, build ID, MASVS summary |

@@ -21,7 +21,7 @@ Walks the task address space with `vm_region_recurse_64` and flags anonymous rea
 
 ### Function prologue inspect
 
-Reads the first 16 bytes of configured symbols (default: `objc_msgSend`, `open`, `syscall`). When personalization supplies hex baselines, bytes must match. Otherwise MobShield flags ARM64 trampolines (`B` / `LDR`+`BR` patterns).
+Reads the first 16 bytes of configured symbols (default: `objc_msgSend`, `open`, `syscall`). When you supply hex baselines in `MobShieldConfig`, bytes must match. Otherwise MobShield flags ARM64 trampolines (`B` / `LDR`+`BR` patterns).
 
 ### Frida artifact scan
 
@@ -37,9 +37,9 @@ Reads `DYLD_INSERT_LIBRARIES` and `DYLD_FORCE_FLAT_NAMESPACE`. Unavailable on Si
 
 ### Method swizzle detect
 
-Compares IMP pointers for curated Foundation APIs. With personalized baselines, compares against expected IMP hex from the build plugin. Without baselines, compares against the superclass IMP.
+Compares IMP pointers for curated Foundation APIs. With baselines from `MobShieldConfig`, compares against the expected IMP hex. Without baselines, compares against the superclass IMP.
 
-## Personalization
+## Baselines
 
 Provide baselines via `MobShieldConfig`:
 
@@ -58,7 +58,7 @@ let config = try MobShieldConfig.make(
 )
 ```
 
-The Xcode personalize script can inject per-build values into these fields.
+The personalize build phase does not fill these in; record them for your build and pass them in code. See [personalization.md](../personalization.md).
 
 ## Bypass notes
 
