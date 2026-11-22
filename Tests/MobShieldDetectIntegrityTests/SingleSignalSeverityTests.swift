@@ -18,25 +18,31 @@ import MobShieldCore
 @testable import MobShieldDetectIntegrity
 import XCTest
 
+private struct Expectation {
+    let name: String
+    let score: Int
+    let severity: Severity
+}
+
 /// Locks the documented single-signal outcomes in `docs/scoring.md`: what each default signal
 /// scores, and which severity it reaches, when it is the only signal of its threat type.
 final class SingleSignalSeverityTests: XCTestCase {
-    private let table: [(String, Int, Severity)] = [
-        (IntegritySignalDefaults.secCode, 85, .critical),
-        (IntegritySignalDefaults.bundleId, 76, .high),
-        (IntegritySignalDefaults.provisioning, 56, .high),
-        (IntegritySignalDefaults.resource, 68, .high),
-        (IntegritySignalDefaults.receipt, 35, .medium),
+    private let table: [Expectation] = [
+        Expectation(name: IntegritySignalDefaults.secCode, score: 85, severity: .critical),
+        Expectation(name: IntegritySignalDefaults.bundleId, score: 76, severity: .high),
+        Expectation(name: IntegritySignalDefaults.provisioning, score: 56, severity: .high),
+        Expectation(name: IntegritySignalDefaults.resource, score: 68, severity: .high),
+        Expectation(name: IntegritySignalDefaults.receipt, score: 35, severity: .medium),
     ]
 
     func testEachDefaultSignal_aloneMatchesDocumentedSeverity() {
         let aggregator = SignalAggregator(config: MobShieldConfig())
-        for (name, expectedScore, expectedSeverity) in table {
-            let signal = IntegritySignalDefaults.buildSignal(name: name, evidence: [:], tuning: [:])
+        for expected in table {
+            let signal = IntegritySignalDefaults.buildSignal(name: expected.name, evidence: [:], tuning: [:])
             let events = aggregator.aggregate(signals: [signal])
-            XCTAssertEqual(1, events.count, name)
-            XCTAssertEqual(expectedScore, events.first?.score, name)
-            XCTAssertEqual(expectedSeverity, events.first?.severity, name)
+            XCTAssertEqual(1, events.count, expected.name)
+            XCTAssertEqual(expected.score, events.first?.score, expected.name)
+            XCTAssertEqual(expected.severity, events.first?.severity, expected.name)
         }
     }
 }

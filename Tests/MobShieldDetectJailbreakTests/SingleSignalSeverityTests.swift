@@ -18,27 +18,33 @@ import MobShieldCore
 @testable import MobShieldDetectJailbreak
 import XCTest
 
+private struct Expectation {
+    let name: String
+    let score: Int
+    let severity: Severity
+}
+
 /// Locks the documented single-signal outcomes in `docs/scoring.md`: what each default signal
 /// scores, and which severity it reaches, when it is the only signal of its threat type.
 final class SingleSignalSeverityTests: XCTestCase {
-    private let table: [(String, Int, Severity)] = [
-        (JailbreakSignalDefaults.dyldImage, 68, .high),
-        (JailbreakSignalDefaults.filesystemPaths, 76, .critical),
-        (JailbreakSignalDefaults.sandboxEscape, 60, .high),
-        (JailbreakSignalDefaults.urlScheme, 10, .low),
-        (JailbreakSignalDefaults.writeTest, 68, .high),
-        (JailbreakSignalDefaults.symlinkTest, 56, .high),
-        (JailbreakSignalDefaults.dyldHeader, 63, .high),
+    private let table: [Expectation] = [
+        Expectation(name: JailbreakSignalDefaults.dyldImage, score: 68, severity: .high),
+        Expectation(name: JailbreakSignalDefaults.filesystemPaths, score: 76, severity: .critical),
+        Expectation(name: JailbreakSignalDefaults.sandboxEscape, score: 60, severity: .high),
+        Expectation(name: JailbreakSignalDefaults.urlScheme, score: 10, severity: .low),
+        Expectation(name: JailbreakSignalDefaults.writeTest, score: 68, severity: .high),
+        Expectation(name: JailbreakSignalDefaults.symlinkTest, score: 56, severity: .high),
+        Expectation(name: JailbreakSignalDefaults.dyldHeader, score: 63, severity: .high),
     ]
 
     func testEachDefaultSignal_aloneMatchesDocumentedSeverity() {
         let aggregator = SignalAggregator(config: MobShieldConfig())
-        for (name, expectedScore, expectedSeverity) in table {
-            let signal = JailbreakSignalDefaults.buildSignal(name: name, evidence: [:], tuning: [:])
+        for expected in table {
+            let signal = JailbreakSignalDefaults.buildSignal(name: expected.name, evidence: [:], tuning: [:])
             let events = aggregator.aggregate(signals: [signal])
-            XCTAssertEqual(1, events.count, name)
-            XCTAssertEqual(expectedScore, events.first?.score, name)
-            XCTAssertEqual(expectedSeverity, events.first?.severity, name)
+            XCTAssertEqual(1, events.count, expected.name)
+            XCTAssertEqual(expected.score, events.first?.score, expected.name)
+            XCTAssertEqual(expected.severity, events.first?.severity, expected.name)
         }
     }
 }
