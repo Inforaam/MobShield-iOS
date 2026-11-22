@@ -18,24 +18,30 @@ import MobShieldCore
 @testable import MobShieldDetectDebugger
 import XCTest
 
+private struct Expectation {
+    let name: String
+    let score: Int
+    let severity: Severity
+}
+
 /// Locks the documented single-signal outcomes in `docs/scoring.md`: what each default signal
 /// scores, and which severity it reaches, when it is the only signal of its threat type.
 final class SingleSignalSeverityTests: XCTestCase {
-    private let table: [(String, Int, Severity)] = [
-        (DebugSignalDefaults.sysctlTraced, 52, .high),
-        (DebugSignalDefaults.denyAttach, 30, .high),
-        (DebugSignalDefaults.machException, 60, .critical),
-        (DebugSignalDefaults.timing, 35, .high),
+    private let table: [Expectation] = [
+        Expectation(name: DebugSignalDefaults.sysctlTraced, score: 52, severity: .high),
+        Expectation(name: DebugSignalDefaults.denyAttach, score: 30, severity: .high),
+        Expectation(name: DebugSignalDefaults.machException, score: 60, severity: .critical),
+        Expectation(name: DebugSignalDefaults.timing, score: 35, severity: .high),
     ]
 
     func testEachDefaultSignal_aloneMatchesDocumentedSeverity() {
         let aggregator = SignalAggregator(config: MobShieldConfig())
-        for (name, expectedScore, expectedSeverity) in table {
-            let signal = DebugSignalDefaults.buildSignal(name: name, evidence: [:], tuning: [:])
+        for expected in table {
+            let signal = DebugSignalDefaults.buildSignal(name: expected.name, evidence: [:], tuning: [:])
             let events = aggregator.aggregate(signals: [signal])
-            XCTAssertEqual(1, events.count, name)
-            XCTAssertEqual(expectedScore, events.first?.score, name)
-            XCTAssertEqual(expectedSeverity, events.first?.severity, name)
+            XCTAssertEqual(1, events.count, expected.name)
+            XCTAssertEqual(expected.score, events.first?.score, expected.name)
+            XCTAssertEqual(expected.severity, events.first?.severity, expected.name)
         }
     }
 }

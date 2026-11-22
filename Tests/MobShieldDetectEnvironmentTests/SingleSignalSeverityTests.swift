@@ -18,22 +18,28 @@ import MobShieldCore
 @testable import MobShieldDetectEnvironment
 import XCTest
 
+private struct Expectation {
+    let name: String
+    let score: Int
+    let severity: Severity
+}
+
 /// Locks the documented single-signal outcomes in `docs/scoring.md`: what each default signal
 /// scores, and which severity it reaches, when it is the only signal of its threat type.
 final class SingleSignalSeverityTests: XCTestCase {
-    private let table: [(String, Int, Severity)] = [
-        (EnvironmentSignalDefaults.simulator, 85, .critical),
-        (EnvironmentSignalDefaults.automation, 63, .critical),
+    private let table: [Expectation] = [
+        Expectation(name: EnvironmentSignalDefaults.simulator, score: 85, severity: .critical),
+        Expectation(name: EnvironmentSignalDefaults.automation, score: 63, severity: .critical),
     ]
 
     func testEachDefaultSignal_aloneMatchesDocumentedSeverity() {
         let aggregator = SignalAggregator(config: MobShieldConfig())
-        for (name, expectedScore, expectedSeverity) in table {
-            let signal = EnvironmentSignalDefaults.buildSignal(name: name, evidence: [:], tuning: [:])
+        for expected in table {
+            let signal = EnvironmentSignalDefaults.buildSignal(name: expected.name, evidence: [:], tuning: [:])
             let events = aggregator.aggregate(signals: [signal])
-            XCTAssertEqual(1, events.count, name)
-            XCTAssertEqual(expectedScore, events.first?.score, name)
-            XCTAssertEqual(expectedSeverity, events.first?.severity, name)
+            XCTAssertEqual(1, events.count, expected.name)
+            XCTAssertEqual(expected.score, events.first?.score, expected.name)
+            XCTAssertEqual(expected.severity, events.first?.severity, expected.name)
         }
     }
 }
