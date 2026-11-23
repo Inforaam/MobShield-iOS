@@ -15,6 +15,7 @@
  */
 
 import Foundation
+import os.log
 
 final class MobShieldEngine: @unchecked Sendable {
     private let config: MobShieldConfig
@@ -30,11 +31,15 @@ final class MobShieldEngine: @unchecked Sendable {
     private let terminate: @Sendable () -> Void
     /// Native core integrity probe; a healthy core returns nonzero. Injectable for tests.
     private let selfCheck: @Sendable () -> Int
+    /// Sink for configuration and signal-name warnings. Injectable for tests.
+    private let warn: @Sendable (String) -> Void
 
     private let stateLock = NSLock()
     private var state: MobShieldState
     private var lastEvents: [ThreatEvent] = []
     private var scanTask: Task<Void, Never>?
+    /// Signal names already warned about; guarded by `stateLock`.
+    private var warnedSignalNames: Set<String> = []
 
     init(
         config: MobShieldConfig,
@@ -43,7 +48,8 @@ final class MobShieldEngine: @unchecked Sendable {
         signalSetVersion: String,
         periodicIntervalOverrideNanos: UInt64? = nil,
         terminate: @escaping @Sendable () -> Void = MobShieldEngine.defaultTerminate,
-        selfCheck: @escaping @Sendable () -> Int = MobShieldEngine.defaultSelfCheck
+        selfCheck: @escaping @Sendable () -> Int = MobShieldEngine.defaultSelfCheck,
+        warn: @escaping @Sendable (String) -> Void = MobShieldEngine.defaultWarn
     ) {
         self.config = config
         self.listener = listener
@@ -53,10 +59,12 @@ final class MobShieldEngine: @unchecked Sendable {
             ?? config.periodicIntervalSec.map { UInt64($0) * 1_000_000_000 }
         self.terminate = terminate
         self.selfCheck = selfCheck
+        self.warn = warn
         self.state = MobShieldEngine.idleState(signalSetVersion: signalSetVersion)
     }
 
     func start() {
+        warnAboutUnknownConfigNames()
         scanTask?.cancel()
         scanTask = Task { [weak self] in
             await self?.runScanLoop()
@@ -136,6 +144,45 @@ final class MobShieldEngine: @unchecked Sendable {
         NativeBridge.selfCheck()
     }
 
+    private static let log = OSLog(subsystem: "io.mobshield", category: "MobShield")
+
+    private static let namingHint = "Signal names are routed by prefix, for example ios.jb., ios.debug. or a name "
+        + "containing .hook.; see docs/scoring.md."
+
+    static let defaultWarn: @Sendable (String) -> Void = { message in
+        os_log("%{public}@", log: MobShieldEngine.log, type: .error, message)
+    }
+
+    /// Distinct names in `names`, in first-seen order, that `SignalAggregator.resolveThreatType`
+    /// maps to no threat type.
+    static func unknownSignalNames<S: Sequence>(_ names: S) -> [String] where S.Element == String {
+        var seen = Set<String>()
+        return names.filter { SignalAggregator.resolveThreatType(signalName: $0) == nil && seen.insert($0).inserted }
+    }
+
+    private func warnAboutUnknownConfigNames() {
+        let entries = MobShieldEngine.unknownSignalNames(config.detectionTuning.keys.sorted()).map { ("detectionTuning", $0) }
+            + MobShieldEngine.unknownSignalNames(config.signalGroups.keys.sorted()).map { ("signalGroups", $0) }
+        for (setting, name) in entries {
+            warn("\(setting) has an entry for \"\(name)\", which matches no threat type, so it has no effect. "
+                + MobShieldEngine.namingHint)
+        }
+    }
+
+    /// Warns once per engine for each signal name that no threat type accepts.
+    private func warnAboutUnknownSignals(_ signals: [Signal]) {
+        let unknown = MobShieldEngine.unknownSignalNames(signals.map(\.name))
+        guard !unknown.isEmpty else {
+            return
+        }
+        stateLock.lock()
+        let fresh = unknown.filter { warnedSignalNames.insert($0).inserted }
+        stateLock.unlock()
+        for name in fresh {
+            warn("Ignoring signal \"\(name)\": its name matches no threat type. " + MobShieldEngine.namingHint)
+        }
+    }
+
     /// Signal name for the native core integrity probe; maps to `.appIntegrity`.
     static let selfCheckSignalName = "ios.integrity.native_self_check"
 
@@ -197,6 +244,7 @@ final class MobShieldEngine: @unchecked Sendable {
             signals.append(selfCheckSignal)
         }
 
+        warnAboutUnknownSignals(signals)
         let aggregator = SignalAggregator(config: config)
         let events = aggregator.aggregate(signals: signals)
         for event in events {
