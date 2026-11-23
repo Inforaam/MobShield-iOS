@@ -60,6 +60,9 @@ public struct MobShieldConfig: Equatable, Sendable {
     /// for it. See `docs/termination.md`.
     public let terminateOn: Set<ThreatType>
 
+    /// Creates a configuration, stopping the app with a descriptive message if a value is invalid,
+    /// for example a termination policy while `detectOnly` is true. Use `make(...)` or
+    /// `builder().build()` to receive a `MobShieldConfigError` instead.
     public init(
         detectOnly: Bool = true,
         expectedSigners: [String] = [],
@@ -77,23 +80,29 @@ public struct MobShieldConfig: Equatable, Sendable {
         signalGroups: [String: String] = DefaultSignalGroups.map,
         terminateOn: Set<ThreatType> = Set(ThreatType.allCases)
     ) {
-        self = try! Self.make(
-            detectOnly: detectOnly,
-            expectedSigners: expectedSigners,
-            terminationPolicy: terminationPolicy,
-            thresholds: thresholds,
-            allowDeveloperSignals: allowDeveloperSignals,
-            expectedPackageId: expectedPackageId,
-            periodicIntervalSec: periodicIntervalSec,
-            detectionTuning: detectionTuning,
-            additionalJailbreakPaths: additionalJailbreakPaths,
-            enablePtraceDenyAttach: enablePtraceDenyAttach,
-            hookPrologueBaselines: hookPrologueBaselines,
-            hookSwizzleBaselines: hookSwizzleBaselines,
-            expectedResourceHashes: expectedResourceHashes,
-            signalGroups: signalGroups,
-            terminateOn: terminateOn
-        )
+        do {
+            self = try Self.make(
+                detectOnly: detectOnly,
+                expectedSigners: expectedSigners,
+                terminationPolicy: terminationPolicy,
+                thresholds: thresholds,
+                allowDeveloperSignals: allowDeveloperSignals,
+                expectedPackageId: expectedPackageId,
+                periodicIntervalSec: periodicIntervalSec,
+                detectionTuning: detectionTuning,
+                additionalJailbreakPaths: additionalJailbreakPaths,
+                enablePtraceDenyAttach: enablePtraceDenyAttach,
+                hookPrologueBaselines: hookPrologueBaselines,
+                hookSwizzleBaselines: hookSwizzleBaselines,
+                expectedResourceHashes: expectedResourceHashes,
+                signalGroups: signalGroups,
+                terminateOn: terminateOn
+            )
+        } catch {
+            fatalError(
+                "Invalid MobShieldConfig: \(error). Use MobShieldConfig.make(...) or builder().build() to handle this as a thrown error."
+            )
+        }
     }
 
     public static func make(
