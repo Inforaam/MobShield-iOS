@@ -64,3 +64,19 @@ struct MockSecCodeProvider: IntegritySecCodeProviding {
         return signingInfo
     }
 }
+
+struct MockExecutableProvider: IntegrityExecutableProviding {
+    var info: IntegrityExecutableInfo?
+
+    func executableInfo() -> IntegrityExecutableInfo? {
+        info
+    }
+}
+
+struct MockAppTransactionProvider: IntegrityAppTransactionProviding {
+    var result: IntegrityAppTransactionResult
+
+    func appTransaction() async -> IntegrityAppTransactionResult {
+        result
+    }
+}

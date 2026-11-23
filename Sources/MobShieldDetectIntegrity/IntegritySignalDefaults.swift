@@ -24,6 +24,9 @@ public enum IntegritySignalDefaults {
     public static let provisioning = "ios.integrity.provisioning"
     public static let resource = "ios.integrity.resource"
     public static let receipt = "ios.integrity.receipt"
+    public static let teamId = "ios.integrity.team_id"
+    public static let distribution = "ios.integrity.distribution"
+    public static let encryption = "ios.integrity.encryption"
     /// A configured check timed out or could not read its input; evidence `checks` lists `check:reason` pairs.
     public static let checkUnavailable = "ios.integrity.check_unavailable"
 
@@ -33,6 +36,9 @@ public enum IntegritySignalDefaults {
         provisioning: SignalTuning(weight: 70, confidence: 80),
         resource: SignalTuning(weight: 80, confidence: 85),
         receipt: SignalTuning(weight: 55, confidence: 65),
+        teamId: SignalTuning(weight: 90, confidence: 95),
+        distribution: SignalTuning(weight: 80, confidence: 90),
+        encryption: SignalTuning(weight: 80, confidence: 85),
         checkUnavailable: SignalTuning(weight: 30, confidence: 40),
     ]
 

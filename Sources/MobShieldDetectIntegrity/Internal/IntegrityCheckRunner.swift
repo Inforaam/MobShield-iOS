@@ -37,6 +37,20 @@ enum IntegrityCheckRunner {
             }
         }
     }
+
+    /// Async variant of `run(timeoutNs:queue:_:)`.
+    static func runAsync(
+        timeoutNs: UInt64,
+        _ work: @escaping @Sendable () async -> IntegrityScanHit?
+    ) async -> IntegrityCheckResult {
+        await withCheckedContinuation { continuation in
+            let once = ResumeOnce(continuation)
+            Task { once.resume(.finished(await work())) }
+            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + .nanoseconds(Int(clamping: timeoutNs))) {
+                once.resume(.timedOut)
+            }
+        }
+    }
 }
 
 private final class ResumeOnce: @unchecked Sendable {

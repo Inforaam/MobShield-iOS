@@ -118,6 +118,9 @@ default iOS signal when it is the only signal of its threat type. It is enforced
 | `ios.automation.frameworks` | 75 / 85 | 63 | CRITICAL |
 | **Integrity** (`APP_INTEGRITY`, warning 50, critical 80) | | | |
 | `ios.integrity.sec_code` | 90 / 95 | 85 | CRITICAL |
+| `ios.integrity.team_id` | 90 / 95 | 85 | CRITICAL |
+| `ios.integrity.distribution` | 80 / 90 | 72 | HIGH |
+| `ios.integrity.encryption` | 80 / 85 | 68 | HIGH |
 | `ios.integrity.bundle_id` | 85 / 90 | 76 | HIGH |
 | `ios.integrity.resource` | 80 / 85 | 68 | HIGH |
 | `ios.integrity.provisioning` | 70 / 80 | 56 | HIGH |

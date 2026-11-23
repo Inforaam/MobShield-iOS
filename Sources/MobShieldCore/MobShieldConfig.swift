@@ -21,6 +21,7 @@ public enum MobShieldConfigError: Error, Equatable {
     case detectOnlyRequiresNoTermination
     case invalidPeriodicInterval
     case blankPackageId
+    case invalidTeamId(String)
 }
 
 /// Runtime configuration for MobShield.
@@ -35,7 +36,7 @@ public struct MobShieldConfig: Equatable, Sendable {
     public let thresholds: [ThreatType: ThreatThreshold]
     /// Emit DEVELOPER_MODE and ADB_ENABLED events when true.
     public let allowDeveloperSignals: Bool
-    /// Optional bundle identifier override for integrity checks.
+    /// Optional expected bundle identifier for integrity checks.
     public let expectedPackageId: String?
     /// Optional rescan interval in seconds; nil disables periodic scans.
     public let periodicIntervalSec: Int?
@@ -59,6 +60,10 @@ public struct MobShieldConfig: Equatable, Sendable {
     /// Remove a type, for example `.privilegedAccess`, to keep reporting it without ever terminating
     /// for it. See `docs/termination.md`.
     public let terminateOn: Set<ThreatType>
+    /// Optional expected Team ID (10 characters) of the app's code signature.
+    public let expectedTeamId: String?
+    /// Distribution channels this build may run from. Empty skips the distribution check.
+    public let allowedDistributions: Set<AppDistribution>
 
     /// Creates a configuration, stopping the app with a descriptive message if a value is invalid,
     /// for example a termination policy while `detectOnly` is true. Use `make(...)` or
@@ -78,7 +83,9 @@ public struct MobShieldConfig: Equatable, Sendable {
         hookSwizzleBaselines: [HookSwizzleBaseline] = [],
         expectedResourceHashes: [String: String] = [:],
         signalGroups: [String: String] = DefaultSignalGroups.map,
-        terminateOn: Set<ThreatType> = Set(ThreatType.allCases)
+        terminateOn: Set<ThreatType> = Set(ThreatType.allCases),
+        expectedTeamId: String? = nil,
+        allowedDistributions: Set<AppDistribution> = []
     ) {
         do {
             self = try Self.make(
@@ -96,7 +103,9 @@ public struct MobShieldConfig: Equatable, Sendable {
                 hookSwizzleBaselines: hookSwizzleBaselines,
                 expectedResourceHashes: expectedResourceHashes,
                 signalGroups: signalGroups,
-                terminateOn: terminateOn
+                terminateOn: terminateOn,
+                expectedTeamId: expectedTeamId,
+                allowedDistributions: allowedDistributions
             )
         } catch {
             fatalError(
@@ -120,7 +129,9 @@ public struct MobShieldConfig: Equatable, Sendable {
         hookSwizzleBaselines: [HookSwizzleBaseline] = [],
         expectedResourceHashes: [String: String] = [:],
         signalGroups: [String: String] = DefaultSignalGroups.map,
-        terminateOn: Set<ThreatType> = Set(ThreatType.allCases)
+        terminateOn: Set<ThreatType> = Set(ThreatType.allCases),
+        expectedTeamId: String? = nil,
+        allowedDistributions: Set<AppDistribution> = []
     ) throws -> MobShieldConfig {
         try validateSigners(expectedSigners)
         try validateResourceHashes(expectedResourceHashes)
@@ -132,6 +143,9 @@ public struct MobShieldConfig: Equatable, Sendable {
         }
         if detectOnly, terminationPolicy != .none {
             throw MobShieldConfigError.detectOnlyRequiresNoTermination
+        }
+        if let expectedTeamId, !isValidTeamId(expectedTeamId) {
+            throw MobShieldConfigError.invalidTeamId(expectedTeamId)
         }
         return MobShieldConfig(
             detectOnly: detectOnly,
@@ -149,6 +163,8 @@ public struct MobShieldConfig: Equatable, Sendable {
             expectedResourceHashes: expectedResourceHashes,
             signalGroups: signalGroups,
             terminateOn: terminateOn,
+            expectedTeamId: expectedTeamId,
+            allowedDistributions: allowedDistributions,
             skipValidation: true
         )
     }
@@ -169,6 +185,8 @@ public struct MobShieldConfig: Equatable, Sendable {
         expectedResourceHashes: [String: String],
         signalGroups: [String: String],
         terminateOn: Set<ThreatType>,
+        expectedTeamId: String?,
+        allowedDistributions: Set<AppDistribution>,
         skipValidation: Bool
     ) {
         _ = skipValidation
@@ -187,6 +205,12 @@ public struct MobShieldConfig: Equatable, Sendable {
         self.expectedResourceHashes = expectedResourceHashes
         self.signalGroups = signalGroups
         self.terminateOn = terminateOn
+        self.expectedTeamId = expectedTeamId
+        self.allowedDistributions = allowedDistributions
+    }
+
+    static func isValidTeamId(_ value: String) -> Bool {
+        value.count == 10 && value.allSatisfy { ("A"..."Z").contains($0) || ("0"..."9").contains($0) }
     }
 
     public static func validateResourceHashes(_ hashes: [String: String]) throws {
@@ -231,6 +255,8 @@ public extension MobShieldConfig {
         private var expectedResourceHashes: [String: String] = [:]
         private var signalGroups = DefaultSignalGroups.map
         private var terminateOn = Set(ThreatType.allCases)
+        private var expectedTeamId: String?
+        private var allowedDistributions: Set<AppDistribution> = []
 
         public init() {}
 
@@ -324,6 +350,18 @@ public extension MobShieldConfig {
             return copy
         }
 
+        public func expectedTeamId(_ value: String?) -> Builder {
+            var copy = self
+            copy.expectedTeamId = value
+            return copy
+        }
+
+        public func allowedDistributions(_ value: Set<AppDistribution>) -> Builder {
+            var copy = self
+            copy.allowedDistributions = value
+            return copy
+        }
+
         public func build() throws -> MobShieldConfig {
             try MobShieldConfig.make(
                 detectOnly: detectOnly,
@@ -340,7 +378,9 @@ public extension MobShieldConfig {
                 hookSwizzleBaselines: hookSwizzleBaselines,
                 expectedResourceHashes: expectedResourceHashes,
                 signalGroups: signalGroups,
-                terminateOn: terminateOn
+                terminateOn: terminateOn,
+                expectedTeamId: expectedTeamId,
+                allowedDistributions: allowedDistributions
             )
         }
     }

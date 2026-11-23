@@ -48,4 +48,12 @@ enum ProvisioningProfileParser {
         }
         return []
     }
+
+    static func provisionsAllDevices(_ plist: [String: Any]) -> Bool {
+        plist["ProvisionsAllDevices"] as? Bool ?? false
+    }
+
+    static func getTaskAllow(_ plist: [String: Any]) -> Bool {
+        (plist["Entitlements"] as? [String: Any])?["get-task-allow"] as? Bool ?? false
+    }
 }
