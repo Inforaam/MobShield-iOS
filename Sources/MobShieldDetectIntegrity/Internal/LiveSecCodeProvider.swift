@@ -20,6 +20,8 @@ import Security
 public enum IntegritySecCodeError: Error, Sendable {
     case apiFailed(OSStatus)
     case missingSigningInfo
+    /// The bundle has no `embedded.mobileprovision`, as in App Store and TestFlight builds.
+    case noEmbeddedProfile
 }
 
 /// Reads signing metadata from the embedded provisioning profile using Security.framework certificates.
@@ -38,6 +40,9 @@ public struct LiveSecCodeProvider: IntegritySecCodeProviding {
             throw IntegritySecCodeError.missingSigningInfo
         }
         let profileURL = bundleURL.appendingPathComponent("embedded.mobileprovision")
+        guard bundle.fileExists(atPath: profileURL.path) else {
+            throw IntegritySecCodeError.noEmbeddedProfile
+        }
         guard let data = bundle.contents(atPath: profileURL.path),
               let plist = ProvisioningProfileParser.parsePlist(from: data) else {
             throw IntegritySecCodeError.missingSigningInfo

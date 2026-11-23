@@ -34,11 +34,10 @@ public struct CodeSignatureCheck: Sendable {
         let signingInfo: IntegritySigningInfo
         do {
             signingInfo = try secCode.copySigningInfo()
+        } catch IntegritySecCodeError.noEmbeddedProfile {
+            return nil
         } catch {
-            return IntegrityScanHit(
-                reason: "sec_code_unavailable",
-                evidence: ["detail": "unable_to_read_signing_information"]
-            )
+            return IntegrityScanHit(reason: "sec_code_unavailable", isUnavailable: true)
         }
 
         let actual = Set(signingInfo.certificateDigests.map { SHA256Digest.normalize($0) })

@@ -6,11 +6,18 @@ MobShield integrity detection (`MobShieldDetectIntegrity`) validates code signat
 
 | Signal | Technique | Default weight | Default confidence |
 |--------|-----------|----------------|--------------------|
-| `ios.integrity.sec_code` | `SecCodeCopySelf` + `SecCodeCopySigningInformation` | 90 | 95 |
+| `ios.integrity.sec_code` | Certificates in `embedded.mobileprovision` vs anchor | 90 | 95 |
 | `ios.integrity.bundle_id` | `Bundle` identifier vs anchor | 85 | 90 |
 | `ios.integrity.provisioning` | `embedded.mobileprovision` plist parse | 70 | 80 |
 | `ios.integrity.resource` | SHA-256 of anchored bundle files | 80 | 85 |
 | `ios.integrity.receipt` | `appStoreReceiptURL` basic PKCS#7 shape | 55 | 65 |
+| `ios.integrity.check_unavailable` | A configured check timed out or could not read its input | 30 | 40 |
+
+`ios.integrity.check_unavailable` scores LOW on its own. One signal is emitted per scan, and its
+`checks` evidence lists each `check:reason` pair (for example `resource:timeout`).
+
+App Store and TestFlight builds do not contain `embedded.mobileprovision`. In those builds the code
+signature and provisioning checks have nothing to compare and emit no signal.
 
 ## Re-signing attack model
 
@@ -24,7 +31,7 @@ A repackaged IPA typically changes one or more of:
 
 MobShield compares live runtime values to anchors you set in `MobShieldConfig`.
 
-Attackers who strip signatures entirely often fail `SecCodeCopySigningInformation` or present certificates outside the allowlist. Attackers who re-sign with their own developer certificate are caught when `expectedSigners` and `expectedPackageId` do not match.
+Attackers who re-sign with their own developer certificate are caught when `expectedSigners` and `expectedPackageId` do not match.
 
 ## Configuration
 
@@ -48,7 +55,7 @@ await IntegrityDetectionRegistrar.register(config: config)
 
 ### Code signature
 
-Uses Security.framework certificate APIs. On iOS, `SecCodeCopySelf` is not exposed in the mobile SDK, so MobShield reads `DeveloperCertificates` from `embedded.mobileprovision` and computes SHA-256 digests with `SecCertificateCreateWithData`. Any expected digest match is treated as success.
+Uses Security.framework certificate APIs. On iOS, `SecCodeCopySelf` is not exposed in the mobile SDK, so MobShield reads `DeveloperCertificates` from `embedded.mobileprovision` and computes SHA-256 digests with `SecCertificateCreateWithData`. Any expected digest match is treated as success. Skipped when the build has no embedded profile. A profile that cannot be read is reported as `sec_code:sec_code_unavailable` through `ios.integrity.check_unavailable`.
 
 ### Bundle identifier
 
@@ -56,15 +63,22 @@ Compares `Bundle.main.bundleIdentifier` to `expectedPackageId`.
 
 ### Embedded provisioning profile
 
-Reads `embedded.mobileprovision`, extracts the XML plist, and compares `application-identifier` to `TEAMID.expectedPackageId`. Missing profile is ignored on Simulator; on device a missing profile may indicate an App Store distribution build.
+Reads `embedded.mobileprovision`, extracts the XML plist, and compares `application-identifier` to `TEAMID.expectedPackageId`. A missing profile emits no signal: App Store and TestFlight builds, and Simulator builds, do not have one. A profile that cannot be read or parsed is reported through `ios.integrity.check_unavailable`.
 
 ### Resource integrity
 
-Hashes files at anchored paths with SHA-256 (CryptoKit). Record digests for `Info.plist` and the main storyboard (`UIMainStoryboardFile`) for your build and pass them in `MobShieldConfig`; the personalize build phase does not record them.
+Hashes files at anchored paths with SHA-256 (CryptoKit). A file that cannot be read is reported through `ios.integrity.check_unavailable`; a missing file is reported as `ios.integrity.resource`. Record digests for `Info.plist` and the main storyboard (`UIMainStoryboardFile`) for your build and pass them in `MobShieldConfig`; the personalize build phase does not record them.
 
 ### App Store receipt
 
 When `appStoreReceiptURL` is present, verifies readability, minimum size, and ASN.1 SEQUENCE prefix (`div 0x30`). Absent receipts on Simulator or developer builds do not emit a signal.
+
+## Timeouts
+
+Each check runs off the calling task with a timeout: `scanTimeoutMs` (default 500 ms) for most
+checks and `digestTimeoutMs` (default 5 s) for resource hashing. A check that does not finish in
+time is reported as `check:timeout` through `ios.integrity.check_unavailable`, and the scan does not
+wait for it.
 
 ## Bypass notes
 

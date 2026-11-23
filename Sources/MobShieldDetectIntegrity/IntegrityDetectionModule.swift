@@ -21,13 +21,15 @@ import MobShieldCore
 
 /// App signature, bundle ID, provisioning, resource, and receipt integrity checks.
 public struct IntegrityDetectionModule: DetectionModule {
+    private struct Check: Sendable {
+        let name: String
+        let signalName: String
+        let timeoutNs: UInt64
+        let scan: @Sendable () -> IntegrityScanHit?
+    }
+
     private let detectionTuning: [String: SignalTuning]
-    private let scanTimeoutNs: UInt64
-    private let codeSignatureCheck: CodeSignatureCheck
-    private let bundleIdentifierCheck: BundleIdentifierCheck?
-    private let provisioningCheck: EmbeddedProvisioningProfileCheck
-    private let resourceCheck: ResourceIntegrityCheck
-    private let receiptCheck: AppStoreReceiptCheck
+    private let checks: [Check]
 
     public let name = "integrity"
     public let criticality = 100
@@ -35,86 +37,102 @@ public struct IntegrityDetectionModule: DetectionModule {
     public init(
         config: MobShieldConfig = MobShieldConfig(),
         detectionTuning: [String: SignalTuning]? = nil,
-        scanTimeoutMs: Int = 100,
+        scanTimeoutMs: Int = 500,
+        digestTimeoutMs: Int = 5_000,
         bundle: IntegrityBundleProviding = LiveIntegrityBundleProvider(),
         secCode: IntegritySecCodeProviding = LiveSecCodeProvider()
     ) {
         self.detectionTuning = detectionTuning ?? config.detectionTuning
-        scanTimeoutNs = UInt64(scanTimeoutMs) * 1_000_000
+        let scanTimeoutNs = UInt64(max(scanTimeoutMs, 0)) * 1_000_000
+        let digestTimeoutNs = UInt64(max(digestTimeoutMs, 0)) * 1_000_000
 
-        codeSignatureCheck = CodeSignatureCheck(
-            expectedSigners: config.expectedSigners,
-            secCode: secCode
-        )
-        if let expectedPackageId = config.expectedPackageId {
-            bundleIdentifierCheck = BundleIdentifierCheck(
-                expectedPackageId: expectedPackageId,
-                bundle: bundle
-            )
-        } else {
-            bundleIdentifierCheck = nil
+        var checks: [Check] = []
+        if !config.expectedSigners.isEmpty {
+            let check = CodeSignatureCheck(expectedSigners: config.expectedSigners, secCode: secCode)
+            checks.append(Check(
+                name: "sec_code",
+                signalName: IntegritySignalDefaults.secCode,
+                timeoutNs: scanTimeoutNs,
+                scan: check.scan
+            ))
         }
-        provisioningCheck = EmbeddedProvisioningProfileCheck(
+        if let expectedPackageId = config.expectedPackageId {
+            let check = BundleIdentifierCheck(expectedPackageId: expectedPackageId, bundle: bundle)
+            checks.append(Check(
+                name: "bundle_id",
+                signalName: IntegritySignalDefaults.bundleId,
+                timeoutNs: scanTimeoutNs,
+                scan: check.scan
+            ))
+        }
+        let provisioningCheck = EmbeddedProvisioningProfileCheck(
             expectedPackageId: config.expectedPackageId,
             bundle: bundle
         )
-        resourceCheck = ResourceIntegrityCheck(
-            expectedHashes: config.expectedResourceHashes,
-            bundle: bundle
-        )
-        receiptCheck = AppStoreReceiptCheck(bundle: bundle)
+        checks.append(Check(
+            name: "provisioning",
+            signalName: IntegritySignalDefaults.provisioning,
+            timeoutNs: scanTimeoutNs,
+            scan: provisioningCheck.scan
+        ))
+        if !config.expectedResourceHashes.isEmpty {
+            let check = ResourceIntegrityCheck(expectedHashes: config.expectedResourceHashes, bundle: bundle)
+            checks.append(Check(
+                name: "resource",
+                signalName: IntegritySignalDefaults.resource,
+                timeoutNs: digestTimeoutNs,
+                scan: check.scan
+            ))
+        }
+        let receiptCheck = AppStoreReceiptCheck(bundle: bundle)
+        checks.append(Check(
+            name: "receipt",
+            signalName: IntegritySignalDefaults.receipt,
+            timeoutNs: scanTimeoutNs,
+            scan: receiptCheck.scan
+        ))
+        self.checks = checks
     }
 
     public func scan() async -> [Signal] {
-        await withTaskGroup(of: [Signal].self) { group in
-            group.addTask { await self.runCheck(IntegritySignalDefaults.secCode) { self.codeSignatureCheck.scan() } }
-            group.addTask {
-                await self.runCheck(IntegritySignalDefaults.bundleId) {
-                    self.bundleIdentifierCheck?.scan()
-                }
+        let results = await withTaskGroup(of: (Check, IntegrityCheckResult).self) { group in
+            for check in checks {
+                group.addTask { (check, await IntegrityCheckRunner.run(timeoutNs: check.timeoutNs, check.scan)) }
             }
-            group.addTask { await self.runCheck(IntegritySignalDefaults.provisioning) { self.provisioningCheck.scan() } }
-            group.addTask { await self.runCheck(IntegritySignalDefaults.resource) { self.resourceCheck.scan() } }
-            group.addTask { await self.runCheck(IntegritySignalDefaults.receipt) { self.receiptCheck.scan() } }
-
-            var signals: [Signal] = []
-            for await batch in group {
-                signals.append(contentsOf: batch)
+            var results: [(Check, IntegrityCheckResult)] = []
+            for await result in group {
+                results.append(result)
             }
-            return signals
+            return results
         }
-    }
 
-    private func runCheck(
-        _ signalName: String,
-        block: @escaping @Sendable () -> IntegrityScanHit?
-    ) async -> [Signal] {
-        await withTimeout {
-            guard let hit = block() else {
-                return []
-            }
-            var evidence = hit.evidence
-            evidence["reason"] = hit.reason
-            return [
-                IntegritySignalDefaults.buildSignal(
-                    name: signalName,
+        var signals: [Signal] = []
+        var unavailable: [String] = []
+        for (check, result) in results {
+            switch result {
+            case .timedOut:
+                unavailable.append("\(check.name):timeout")
+            case .finished(nil):
+                continue
+            case let .finished(hit?) where hit.isUnavailable:
+                unavailable.append("\(check.name):\(hit.reason)")
+            case let .finished(hit?):
+                var evidence = hit.evidence
+                evidence["reason"] = hit.reason
+                signals.append(IntegritySignalDefaults.buildSignal(
+                    name: check.signalName,
                     evidence: evidence,
                     tuning: detectionTuning
-                ),
-            ]
-        }
-    }
-
-    private func withTimeout(_ block: @escaping @Sendable () -> [Signal]) async -> [Signal] {
-        await withTaskGroup(of: [Signal].self) { group in
-            group.addTask { block() }
-            group.addTask {
-                try? await Task.sleep(nanoseconds: scanTimeoutNs)
-                return []
+                ))
             }
-            let first = await group.next() ?? []
-            group.cancelAll()
-            return first
         }
+        if !unavailable.isEmpty {
+            signals.append(IntegritySignalDefaults.buildSignal(
+                name: IntegritySignalDefaults.checkUnavailable,
+                evidence: ["checks": unavailable.sorted().joined(separator: ",")],
+                tuning: detectionTuning
+            ))
+        }
+        return signals
     }
 }

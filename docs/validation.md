@@ -88,6 +88,7 @@ when…" describes the runtime condition that produces the signal.
 | `ios.integrity.resource` | 80 | 85 | a bundle resource hash differs from `expectedResourceHashes` |
 | `ios.integrity.provisioning` | 70 | 80 | the embedded profile's app id does not match `expectedPackageId` |
 | `ios.integrity.receipt` | 55 | 65 | the App Store receipt is missing/malformed |
+| `ios.integrity.check_unavailable` | 30 | 40 | a configured integrity check timed out or could not read its input |
 
 > Integrity signals only fire when the corresponding anchor is configured (`expectedSigners`,
 > `expectedPackageId`, `expectedResourceHashes`). With a default config they stay silent — except

@@ -33,6 +33,7 @@ final class SingleSignalSeverityTests: XCTestCase {
         Expectation(name: IntegritySignalDefaults.provisioning, score: 56, severity: .high),
         Expectation(name: IntegritySignalDefaults.resource, score: 68, severity: .high),
         Expectation(name: IntegritySignalDefaults.receipt, score: 35, severity: .medium),
+        Expectation(name: IntegritySignalDefaults.checkUnavailable, score: 12, severity: .low),
     ]
 
     func testEachDefaultSignal_aloneMatchesDocumentedSeverity() {
