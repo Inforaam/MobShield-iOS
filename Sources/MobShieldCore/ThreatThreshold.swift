@@ -34,6 +34,12 @@ public struct ThreatThreshold: Equatable, Sendable {
         self.warning = warning
         self.critical = critical
     }
+
+    /// For the built-in defaults below, which are valid by construction.
+    fileprivate init(knownValidWarning warning: Int, critical: Int?) {
+        self.warning = warning
+        self.critical = critical
+    }
 }
 
 public enum ThreatThresholdError: Error, Equatable {
@@ -45,7 +51,7 @@ public enum ThreatThresholdError: Error, Equatable {
 public enum DefaultThreatThresholds {
     public static let map: [ThreatType: ThreatThreshold] = {
         func threshold(_ warning: Int, _ critical: Int?) -> ThreatThreshold {
-            try! ThreatThreshold(warning: warning, critical: critical)
+            ThreatThreshold(knownValidWarning: warning, critical: critical)
         }
         return [
             .privilegedAccess: threshold(40, 70),
