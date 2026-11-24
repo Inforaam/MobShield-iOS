@@ -50,7 +50,7 @@ enum IntegrityCheckRunner {
         await withCheckedContinuation { continuation in
             let once = ResumeOnce(continuation)
             Task { once.resume(.finished(await work())) }
-            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + .nanoseconds(Int(clamping: timeoutNs))) {
+            timerQueue.asyncAfter(deadline: .now() + .nanoseconds(Int(clamping: timeoutNs))) {
                 once.resume(.timedOut)
             }
         }

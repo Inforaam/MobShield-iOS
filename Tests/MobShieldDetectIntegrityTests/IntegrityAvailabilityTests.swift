@@ -133,7 +133,9 @@ final class IntegrityAvailabilityTests: XCTestCase {
             config: config,
             bundle: bundle,
             secCode: LiveSecCodeProvider(bundle: bundle),
-            appTransactions: MockAppTransactionProvider(result: .verified(bundleId: "com.example.app"))
+            appTransactions: MockAppTransactionProvider(result: .verified(bundleId: "com.example.app")),
+            isSimulator: false,
+            isiOSAppOnMac: false
         )
         let signals = await module.scan()
         XCTAssertEqual([], signals.map(\.name))
@@ -151,7 +153,9 @@ final class IntegrityAvailabilityTests: XCTestCase {
                 signingInfo: IntegritySigningInfo(certificateDigests: [], teamIdentifier: nil, bundleIdentifier: nil),
                 error: IntegritySecCodeError.missingSigningInfo
             ),
-            appTransactions: MockAppTransactionProvider(result: .unsupported)
+            appTransactions: MockAppTransactionProvider(result: .unsupported),
+            isSimulator: false,
+            isiOSAppOnMac: false
         )
         let signals = await module.scan()
         XCTAssertEqual([IntegritySignalDefaults.checkUnavailable], signals.map(\.name))
@@ -171,7 +175,9 @@ final class IntegrityAvailabilityTests: XCTestCase {
             scanTimeoutMs: 50,
             bundle: MockIntegrityBundle(bundleURL: bundleURL),
             secCode: SlowSecCodeProvider(),
-            appTransactions: MockAppTransactionProvider(result: .unsupported)
+            appTransactions: MockAppTransactionProvider(result: .unsupported),
+            isSimulator: false,
+            isiOSAppOnMac: false
         )
         let signals = await module.scan()
         XCTAssertEqual("sec_code:timeout", signals.first { $0.name == IntegritySignalDefaults.checkUnavailable }?

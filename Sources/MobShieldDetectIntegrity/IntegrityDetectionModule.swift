@@ -61,6 +61,32 @@ public struct IntegrityDetectionModule: DetectionModule {
         executable: IntegrityExecutableProviding = LiveExecutableProvider(),
         appTransactions: IntegrityAppTransactionProviding = LiveAppTransactionProvider()
     ) {
+        self.init(
+            config: config,
+            detectionTuning: detectionTuning,
+            scanTimeoutMs: scanTimeoutMs,
+            digestTimeoutMs: digestTimeoutMs,
+            bundle: bundle,
+            secCode: secCode,
+            executable: executable,
+            appTransactions: appTransactions,
+            isSimulator: IntegrityPlatform.isSimulator,
+            isiOSAppOnMac: IntegrityPlatform.isiOSAppOnMac
+        )
+    }
+
+    init(
+        config: MobShieldConfig,
+        detectionTuning: [String: SignalTuning]? = nil,
+        scanTimeoutMs: Int = 500,
+        digestTimeoutMs: Int = 5_000,
+        bundle: IntegrityBundleProviding,
+        secCode: IntegritySecCodeProviding = LiveSecCodeProvider(),
+        executable: IntegrityExecutableProviding = LiveExecutableProvider(),
+        appTransactions: IntegrityAppTransactionProviding = LiveAppTransactionProvider(),
+        isSimulator: Bool,
+        isiOSAppOnMac: Bool
+    ) {
         self.detectionTuning = detectionTuning ?? config.detectionTuning
         let scanTimeoutNs = UInt64(max(scanTimeoutMs, 0)) * 1_000_000
         let digestTimeoutNs = UInt64(max(digestTimeoutMs, 0)) * 1_000_000
@@ -75,19 +101,13 @@ public struct IntegrityDetectionModule: DetectionModule {
                 scan: { check.scan() }
             ))
         }
-        if let expectedTeamId = config.expectedTeamId {
-            let check = TeamIdentifierCheck(
-                expectedTeamId: expectedTeamId,
-                expectedPackageId: config.expectedPackageId,
-                executable: executable
-            )
-            checks.append(Check(
-                name: "team_id",
-                signalName: IntegritySignalDefaults.teamId,
-                timeoutNs: scanTimeoutNs,
-                scan: { check.scan() }
-            ))
-        }
+        checks += Self.codeSignatureChecks(
+            config: config,
+            bundle: bundle,
+            executable: executable,
+            timeoutNs: scanTimeoutNs,
+            platform: (isSimulator: isSimulator, isiOSAppOnMac: isiOSAppOnMac)
+        )
         if let expectedPackageId = config.expectedPackageId {
             let check = BundleIdentifierCheck(expectedPackageId: expectedPackageId, bundle: bundle)
             checks.append(Check(
@@ -107,30 +127,6 @@ public struct IntegrityDetectionModule: DetectionModule {
             timeoutNs: scanTimeoutNs,
             scan: { provisioningCheck.scan() }
         ))
-        if !config.allowedDistributions.isEmpty {
-            let distributionCheck = DistributionCheck(
-                allowed: config.allowedDistributions,
-                bundle: bundle,
-                executable: executable
-            )
-            checks.append(Check(
-                name: "distribution",
-                signalName: IntegritySignalDefaults.distribution,
-                timeoutNs: scanTimeoutNs,
-                scan: { distributionCheck.scan() }
-            ))
-            let encryptionCheck = BinaryEncryptionCheck(
-                allowed: config.allowedDistributions,
-                bundle: bundle,
-                executable: executable
-            )
-            checks.append(Check(
-                name: "encryption",
-                signalName: IntegritySignalDefaults.encryption,
-                timeoutNs: scanTimeoutNs,
-                scan: { encryptionCheck.scan() }
-            ))
-        }
         if !config.expectedResourceHashes.isEmpty {
             let check = ResourceIntegrityCheck(expectedHashes: config.expectedResourceHashes, bundle: bundle)
             checks.append(Check(
@@ -140,7 +136,11 @@ public struct IntegrityDetectionModule: DetectionModule {
                 scan: { check.scan() }
             ))
         }
-        let appStoreCheck = AppStoreVerificationCheck(bundle: bundle, transactions: appTransactions)
+        let appStoreCheck = AppStoreVerificationCheck(
+            bundle: bundle,
+            transactions: appTransactions,
+            isSimulator: isSimulator
+        )
         checks.append(Check(
             name: "receipt",
             signalName: IntegritySignalDefaults.receipt,
@@ -148,6 +148,59 @@ public struct IntegrityDetectionModule: DetectionModule {
             asyncScan: { await appStoreCheck.scan() }
         ))
         self.checks = checks
+    }
+
+    /// Team ID, distribution and encryption checks, which read the executable's code signature.
+    private static func codeSignatureChecks(
+        config: MobShieldConfig,
+        bundle: IntegrityBundleProviding,
+        executable: IntegrityExecutableProviding,
+        timeoutNs: UInt64,
+        platform: (isSimulator: Bool, isiOSAppOnMac: Bool)
+    ) -> [Check] {
+        var checks: [Check] = []
+        if let expectedTeamId = config.expectedTeamId {
+            let check = TeamIdentifierCheck(
+                expectedTeamId: expectedTeamId,
+                expectedPackageId: config.expectedPackageId,
+                executable: executable,
+                isSimulator: platform.isSimulator
+            )
+            checks.append(Check(
+                name: "team_id",
+                signalName: IntegritySignalDefaults.teamId,
+                timeoutNs: timeoutNs,
+                scan: { check.scan() }
+            ))
+        }
+        if !config.allowedDistributions.isEmpty {
+            let distributionCheck = DistributionCheck(
+                allowed: config.allowedDistributions,
+                bundle: bundle,
+                executable: executable,
+                isSimulator: platform.isSimulator
+            )
+            checks.append(Check(
+                name: "distribution",
+                signalName: IntegritySignalDefaults.distribution,
+                timeoutNs: timeoutNs,
+                scan: { distributionCheck.scan() }
+            ))
+            let encryptionCheck = BinaryEncryptionCheck(
+                allowed: config.allowedDistributions,
+                bundle: bundle,
+                executable: executable,
+                isSimulator: platform.isSimulator,
+                isiOSAppOnMac: platform.isiOSAppOnMac
+            )
+            checks.append(Check(
+                name: "encryption",
+                signalName: IntegritySignalDefaults.encryption,
+                timeoutNs: timeoutNs,
+                scan: { encryptionCheck.scan() }
+            ))
+        }
+        return checks
     }
 
     public func scan() async -> [Signal] {

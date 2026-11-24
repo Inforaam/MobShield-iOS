@@ -314,7 +314,9 @@ final class IntegrityVerificationTests: XCTestCase {
             config: config,
             bundle: MockIntegrityBundle(bundleIdentifier: "com.example.app", bundleURL: bundleURL),
             executable: info(),
-            appTransactions: MockAppTransactionProvider(result: .verified(bundleId: "com.example.app"))
+            appTransactions: MockAppTransactionProvider(result: .verified(bundleId: "com.example.app")),
+            isSimulator: false,
+            isiOSAppOnMac: false
         )
         let signals = await module.scan()
         XCTAssertEqual([], signals.map(\.name))
@@ -334,7 +336,9 @@ final class IntegrityVerificationTests: XCTestCase {
                 files: [profilePath: profile(["ProvisionedDevices": ["x"]])]
             ),
             executable: info(team: "ZZZZZ99999", appId: "ZZZZZ99999.com.example.app", encrypted: false),
-            appTransactions: MockAppTransactionProvider(result: .unavailable)
+            appTransactions: MockAppTransactionProvider(result: .unavailable),
+            isSimulator: false,
+            isiOSAppOnMac: false
         )
         let names = await Set(module.scan().map(\.name))
         XCTAssertEqual([IntegritySignalDefaults.teamId, IntegritySignalDefaults.distribution], names)
