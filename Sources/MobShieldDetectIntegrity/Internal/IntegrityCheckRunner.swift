@@ -22,6 +22,10 @@ enum IntegrityCheckResult: Sendable, Equatable {
 }
 
 enum IntegrityCheckRunner {
+    /// Timeouts fire on their own serial queue, which gets a thread even when every thread of the
+    /// shared pool is blocked.
+    private static let timerQueue = DispatchQueue(label: "io.mobshield.integrity.timeout", qos: .utility)
+
     /// Runs `work` off the caller and returns `.timedOut` once `timeoutNs` passes, without waiting
     /// for `work` to return.
     static func run(
@@ -32,7 +36,7 @@ enum IntegrityCheckRunner {
         await withCheckedContinuation { continuation in
             let once = ResumeOnce(continuation)
             queue.async { once.resume(.finished(work())) }
-            queue.asyncAfter(deadline: .now() + .nanoseconds(Int(clamping: timeoutNs))) {
+            timerQueue.asyncAfter(deadline: .now() + .nanoseconds(Int(clamping: timeoutNs))) {
                 once.resume(.timedOut)
             }
         }

@@ -112,6 +112,20 @@ final class IntegrityAvailabilityTests: XCTestCase {
         XCTAssertLessThan(Date().timeIntervalSince(start), 2)
     }
 
+    func testRunner_busyGlobalQueue_stillTimesOut() async {
+        let blockers = ProcessInfo.processInfo.activeProcessorCount * 4
+        for _ in 0..<blockers {
+            DispatchQueue.global(qos: .utility).async { Thread.sleep(forTimeInterval: 1.5) }
+        }
+        let start = Date()
+        let result = await IntegrityCheckRunner.run(timeoutNs: 50_000_000) {
+            Thread.sleep(forTimeInterval: 2)
+            return nil
+        }
+        XCTAssertEqual(.timedOut, result)
+        XCTAssertLessThan(Date().timeIntervalSince(start), 1)
+    }
+
     func testModule_storeBuildWithoutProfile_emitsNothing() async throws {
         let config = try MobShieldConfig.make(expectedSigners: [digest], expectedPackageId: "com.example.app")
         let bundle = MockIntegrityBundle(bundleIdentifier: "com.example.app", bundleURL: bundleURL)

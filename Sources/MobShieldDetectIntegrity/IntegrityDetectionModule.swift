@@ -53,7 +53,7 @@ public struct IntegrityDetectionModule: DetectionModule {
                 name: "sec_code",
                 signalName: IntegritySignalDefaults.secCode,
                 timeoutNs: scanTimeoutNs,
-                scan: check.scan
+                scan: { check.scan() }
             ))
         }
         if let expectedPackageId = config.expectedPackageId {
@@ -62,7 +62,7 @@ public struct IntegrityDetectionModule: DetectionModule {
                 name: "bundle_id",
                 signalName: IntegritySignalDefaults.bundleId,
                 timeoutNs: scanTimeoutNs,
-                scan: check.scan
+                scan: { check.scan() }
             ))
         }
         let provisioningCheck = EmbeddedProvisioningProfileCheck(
@@ -73,7 +73,7 @@ public struct IntegrityDetectionModule: DetectionModule {
             name: "provisioning",
             signalName: IntegritySignalDefaults.provisioning,
             timeoutNs: scanTimeoutNs,
-            scan: provisioningCheck.scan
+            scan: { provisioningCheck.scan() }
         ))
         if !config.expectedResourceHashes.isEmpty {
             let check = ResourceIntegrityCheck(expectedHashes: config.expectedResourceHashes, bundle: bundle)
@@ -81,7 +81,7 @@ public struct IntegrityDetectionModule: DetectionModule {
                 name: "resource",
                 signalName: IntegritySignalDefaults.resource,
                 timeoutNs: digestTimeoutNs,
-                scan: check.scan
+                scan: { check.scan() }
             ))
         }
         let receiptCheck = AppStoreReceiptCheck(bundle: bundle)
@@ -89,7 +89,7 @@ public struct IntegrityDetectionModule: DetectionModule {
             name: "receipt",
             signalName: IntegritySignalDefaults.receipt,
             timeoutNs: scanTimeoutNs,
-            scan: receiptCheck.scan
+            scan: { receiptCheck.scan() }
         ))
         self.checks = checks
     }
