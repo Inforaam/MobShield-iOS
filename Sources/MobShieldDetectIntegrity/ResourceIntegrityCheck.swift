@@ -32,7 +32,7 @@ public struct ResourceIntegrityCheck: Sendable {
         }
 
         guard let bundleURL = bundle.bundleURL else {
-            return IntegrityScanHit(reason: "bundle_url_missing")
+            return IntegrityScanHit(reason: "bundle_url_missing", isUnavailable: true)
         }
 
         for (relativePath, expectedDigest) in expectedHashes {
@@ -49,7 +49,8 @@ public struct ResourceIntegrityCheck: Sendable {
             guard let actualDigest = SHA256Digest.hex(forFileAt: fileURL) else {
                 return IntegrityScanHit(
                     reason: "resource_unreadable",
-                    evidence: ["path": relativePath]
+                    evidence: ["path": relativePath],
+                    isUnavailable: true
                 )
             }
             if SHA256Digest.normalize(actualDigest) != SHA256Digest.normalize(expectedDigest) {

@@ -122,6 +122,7 @@ default iOS signal when it is the only signal of its threat type. It is enforced
 | `ios.integrity.resource` | 80 / 85 | 68 | HIGH |
 | `ios.integrity.provisioning` | 70 / 80 | 56 | HIGH |
 | `ios.integrity.receipt` | 55 / 65 | 35 | MEDIUM |
+| `ios.integrity.check_unavailable` | 30 / 40 | 12 | LOW |
 
 What this means in practice:
 

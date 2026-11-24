@@ -19,9 +19,12 @@ import Foundation
 public struct IntegrityScanHit: Sendable, Equatable {
     public let reason: String
     public let evidence: [String: String]
+    /// The check could not produce a result. Reported through `ios.integrity.check_unavailable`.
+    public let isUnavailable: Bool
 
-    public init(reason: String, evidence: [String: String] = [:]) {
+    public init(reason: String, evidence: [String: String] = [:], isUnavailable: Bool = false) {
         self.reason = reason
         self.evidence = evidence
+        self.isUnavailable = isUnavailable
     }
 }

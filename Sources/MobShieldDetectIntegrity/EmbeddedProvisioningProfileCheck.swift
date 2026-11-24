@@ -16,7 +16,7 @@
 
 import Foundation
 
-/// Parses `embedded.mobileprovision` and validates application identifier metadata.
+/// Parses `embedded.mobileprovision`, when the build has one, and validates its application identifier.
 public struct EmbeddedProvisioningProfileCheck: Sendable {
     private let expectedPackageId: String?
     private let bundle: IntegrityBundleProviding
@@ -28,33 +28,20 @@ public struct EmbeddedProvisioningProfileCheck: Sendable {
 
     public func scan() -> IntegrityScanHit? {
         guard let bundleURL = bundle.bundleURL else {
-            return IntegrityScanHit(reason: "bundle_url_missing")
+            return IntegrityScanHit(reason: "bundle_url_missing", isUnavailable: true)
         }
 
         let profileURL = bundleURL.appendingPathComponent("embedded.mobileprovision")
         guard bundle.fileExists(atPath: profileURL.path) else {
-            #if targetEnvironment(simulator)
             return nil
-            #else
-            return IntegrityScanHit(
-                reason: "provisioning_profile_missing",
-                evidence: ["path": profileURL.path]
-            )
-            #endif
         }
 
         guard let data = bundle.contents(atPath: profileURL.path) else {
-            return IntegrityScanHit(
-                reason: "provisioning_profile_unreadable",
-                evidence: ["path": profileURL.path]
-            )
+            return IntegrityScanHit(reason: "provisioning_profile_unreadable", isUnavailable: true)
         }
 
         guard let plist = ProvisioningProfileParser.parsePlist(from: data) else {
-            return IntegrityScanHit(
-                reason: "provisioning_profile_parse_failed",
-                evidence: ["path": profileURL.path]
-            )
+            return IntegrityScanHit(reason: "provisioning_profile_parse_failed", isUnavailable: true)
         }
 
         let appIdentifier = ProvisioningProfileParser.applicationIdentifier(from: plist)
