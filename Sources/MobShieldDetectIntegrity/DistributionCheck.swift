@@ -54,21 +54,11 @@ public struct DistributionCheck: Sendable {
             return nil
         }
         let actual: AppDistribution
-        switch EmbeddedProfile.lookup(in: bundle) {
-        case nil:
-            return IntegrityScanHit(reason: "bundle_url_missing", isUnavailable: true)
-        case .unreadable:
-            return IntegrityScanHit(reason: "provisioning_profile_unreadable", isUnavailable: true)
-        case .absent:
-            actual = bundle.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt" ? .testFlight : .appStore
-        case let .present(plist):
-            if ProvisioningProfileParser.provisionsAllDevices(plist) {
-                actual = .enterprise
-            } else if ProvisioningProfileParser.getTaskAllow(plist) {
-                actual = .development
-            } else {
-                actual = .adHoc
-            }
+        switch Self.resolve(bundle: bundle) {
+        case let .success(distribution):
+            actual = distribution
+        case let .failure(reason):
+            return IntegrityScanHit(reason: reason.rawValue, isUnavailable: true)
         }
         let allowedList = allowed.map(\.rawValue).sorted().joined(separator: ",")
         if !allowed.contains(actual) {
@@ -84,5 +74,27 @@ public struct DistributionCheck: Sendable {
             )
         }
         return nil
+    }
+
+    enum ResolveFailure: String, Error {
+        case bundleURLMissing = "bundle_url_missing"
+        case profileUnreadable = "provisioning_profile_unreadable"
+    }
+
+    /// The distribution channel of the build in `bundle`, outside the Simulator.
+    static func resolve(bundle: IntegrityBundleProviding) -> Result<AppDistribution, ResolveFailure> {
+        switch EmbeddedProfile.lookup(in: bundle) {
+        case nil:
+            return .failure(.bundleURLMissing)
+        case .unreadable:
+            return .failure(.profileUnreadable)
+        case .absent:
+            return .success(bundle.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt" ? .testFlight : .appStore)
+        case let .present(plist):
+            if ProvisioningProfileParser.provisionsAllDevices(plist) {
+                return .success(.enterprise)
+            }
+            return .success(ProvisioningProfileParser.getTaskAllow(plist) ? .development : .adHoc)
+        }
     }
 }

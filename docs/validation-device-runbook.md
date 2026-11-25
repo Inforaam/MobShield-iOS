@@ -59,8 +59,16 @@ Before compromising the device, run one pass on the **stock** device:
 | 5 | Launched under lldb / from Xcode | `ios.debug.mach_exception`, `ios.debug.sysctl_traced` | `DEBUGGER` |
 | 6 | Re-signed / repackaged `.ipa`, anchors configured | `ios.integrity.team_id`, `ios.integrity.distribution`, `ios.integrity.sec_code` and/or `ios.integrity.bundle_id` | `APP_INTEGRITY` |
 
-Scenario 6 requires anchoring integrity in the config (`expectedSigners`, `expectedPackageId`,
-`expectedResourceHashes`) for a legitimate build, then installing a tampered copy.
+Scenario 6 requires anchoring integrity in the config for a legitimate build, then installing a
+tampered copy:
+
+1. Install the build from TestFlight. Read `IntegrityAnchors.current().configSnippet` and put the
+   values in `MobShieldConfig`, with `allowedDistributions` set to `AppDistribution.store`
+   ([detection/ios-integrity.md](detection/ios-integrity.md#getting-the-values)).
+2. Upload and install that build from TestFlight. Expect no `APP_INTEGRITY` event.
+3. Install the same build as a development or ad hoc build. Expect `ios.integrity.distribution`.
+4. Re-sign it with a different team and install it. Expect `ios.integrity.team_id` and
+   `ios.integrity.distribution`.
 
 ## Results template
 

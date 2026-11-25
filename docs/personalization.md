@@ -13,6 +13,10 @@ The script generates `mobshield_buildinfo.h` in the target's `DERIVED_FILE_DIR`.
   and `MOBSHIELD_AGGRESSIVE_ANTI_DEBUG`, from your build settings. The native code does not read
   these; the runtime integrity checks use the values you pass to `MobShieldConfig`.
 
+The script does not fill in the runtime integrity checks. Set those in `MobShieldConfig`; see
+[detection/ios-integrity.md](detection/ios-integrity.md#getting-the-values) for where to get each
+value.
+
 `mobshield-verify.sh` runs after linking. It checks the signing certificate against
 `MOBSHIELD_EXPECTED_SIGNER_SHA256`, and looks for `MOBSHIELD_BUILD_ID=<this build's ID>` in the app
 bundle, which is only there if MobShield's native code was compiled with this build's header.

@@ -58,6 +58,34 @@ await IntegrityDetectionRegistrar.register(config: config)
 - `expectedPackageId`: Optional; when set enables bundle ID and provisioning checks, and the `application-identifier` comparison of the Team ID check.
 - `expectedResourceHashes`: Relative paths inside the `.app` bundle. Empty skips resource hashing.
 
+## Getting the values
+
+Take the values from a build installed the way your users get it. App Store and TestFlight builds
+are re-signed by Apple and have no embedded profile, so certificate digests from a local build do
+not apply to them. The Team ID, bundle ID and bundle resources stay the same.
+
+### From the running app
+
+`IntegrityAnchors.current()` returns the running app's bundle ID, Team ID, distribution channel,
+the certificate digests from its embedded profile (none for store builds), and the digests of
+`Info.plist` and the main storyboard's `Info.plist`. `configSnippet` formats them as a
+`MobShieldConfig.builder()` call. Read it from a TestFlight build to get store values:
+
+```swift
+print(IntegrityAnchors.current().configSnippet)
+```
+
+### From the build
+
+- **Team ID:** the `DEVELOPMENT_TEAM` build setting, or Membership details in your Apple Developer
+  account.
+- **Resource digests:** hash the files in the exported `.ipa`, for example
+  `unzip -p App.ipa Payload/App.app/Info.plist | shasum -a 256`.
+- **Distribution:** choose per build configuration, for example
+  `AppDistribution.store` for release builds and `[.development]` for debug builds.
+
+Resource digests change whenever those files change, so update them with each release.
+
 ## Checks
 
 ### Code signature
