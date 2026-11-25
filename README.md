@@ -139,7 +139,8 @@ Common configuration (all optional):
 let config = try MobShieldConfig.builder()
     .periodicIntervalSec(30)                 // rescan every 30s (default: one scan at start)
     .expectedPackageId("com.example.app")    // anchor bundle-id integrity
-    .expectedSigners(["<sha256-hex>"])       // anchor code-signing integrity
+    .expectedTeamId("ABCDE12345")            // anchor the code signature's Team ID
+    .allowedDistributions(AppDistribution.store) // App Store and TestFlight only
     .detectOnly(false)                       // opt in to termination
     .terminationPolicy(.exitOnCritical)      // kill the process on a critical threat
     .build()

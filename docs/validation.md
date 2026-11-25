@@ -84,16 +84,19 @@ when…" describes the runtime condition that produces the signal.
 | Signal | weight | conf | Signal fires when… |
 |---|---|---|---|
 | `ios.integrity.sec_code` | 90 | 95 | the signing certificate digest is not in `expectedSigners` |
+| `ios.integrity.team_id` | 90 | 95 | the code signature's Team ID differs from `expectedTeamId` |
+| `ios.integrity.distribution` | 80 | 90 | the build's distribution channel is not in `allowedDistributions` |
+| `ios.integrity.encryption` | 80 | 85 | a store-only build's executable is not encrypted |
 | `ios.integrity.bundle_id` | 85 | 90 | the bundle id differs from `expectedPackageId` |
 | `ios.integrity.resource` | 80 | 85 | a bundle resource hash differs from `expectedResourceHashes` |
 | `ios.integrity.provisioning` | 70 | 80 | the embedded profile's app id does not match `expectedPackageId` |
-| `ios.integrity.receipt` | 55 | 65 | the App Store receipt is missing/malformed |
+| `ios.integrity.receipt` | 55 | 65 | a build without an embedded profile fails App Store verification |
 | `ios.integrity.check_unavailable` | 30 | 40 | a configured integrity check timed out or could not read its input |
 
 > Integrity signals only fire when the corresponding anchor is configured (`expectedSigners`,
-> `expectedPackageId`, `expectedResourceHashes`). With a default config they stay silent — except
-> `ios.integrity.receipt`, which fires in any build lacking an App Store receipt (see baseline
-> note below).
+> `expectedTeamId`, `expectedPackageId`, `allowedDistributions`, `expectedResourceHashes`). The
+> exception is `ios.integrity.receipt`, which runs for builds without an embedded profile on a
+> device.
 
 ## Environment baselines
 
@@ -102,10 +105,9 @@ when…" describes the runtime condition that produces the signal.
 - **Must NOT fire:** any `ios.jb.*`, any `.hook.*` (`common.hook.*` / `ios.hook.*`), any
   `ios.debug.*`. `PRIVILEGED_ACCESS` and `HOOK_FRAMEWORK` must be absent. These are the strong
   false-positive guards.
-- **Known benign signal:** `ios.integrity.receipt` fires on any non-App-Store build (Simulator,
-  dev, TestFlight sideload) because there is no App Store receipt. This yields at most a
-  low/medium `APP_INTEGRITY` event and is expected off the store. Anchor the other integrity
-  checks (`expectedSigners`, etc.) for production.
+- **Integrity:** no `ios.integrity.*` signal on a correctly anchored build. Development, ad hoc
+  and enterprise builds have an embedded profile, so `ios.integrity.receipt` does not run for them.
+  Set `allowedDistributions` to include the channel you are testing.
 - **Situational:** `ios.debug.*` will fire whenever a debugger is attached (e.g. launching from
   Xcode). Validate the clean debugger baseline from a build launched **without** the debugger.
 - **Simulator caveat:** with the `environment` module registered, `ios.env.simulator` fires (→
@@ -119,7 +121,7 @@ when…" describes the runtime condition that produces the signal.
 | Jailbroken (palera1n / Dopamine / unc0ver) | ≥1 of `ios.jb.fs_probe`, `ios.jb.dyld_image`, `ios.jb.symlink` | `PRIVILEGED_ACCESS` (high/critical) |
 | Frida gadget linked / `frida-server` running | ≥1 of `ios.hook.frida_thread`, `ios.hook.frida_symbols`, `common.hook.frida_maps`, `ios.hook.frida_port`, `ios.hook.mach_region` | `HOOK_FRAMEWORK` |
 | Debugger attached (lldb) | ≥1 of `ios.debug.mach_exception`, `ios.debug.sysctl_traced` | `DEBUGGER` |
-| Re-signed / repackaged app | `ios.integrity.sec_code` and/or `ios.integrity.bundle_id` (with anchors configured) | `APP_INTEGRITY` |
+| Re-signed / repackaged app | `ios.integrity.team_id`, `ios.integrity.distribution`, `ios.integrity.sec_code` and/or `ios.integrity.bundle_id` (with anchors configured) | `APP_INTEGRITY` |
 | Running in the iOS Simulator | `ios.env.simulator` | `EMULATOR` |
 | UI automation (Appium / WebDriverAgent / XCUITest) | `ios.automation.frameworks` | `AUTOMATION` |
 
